@@ -17,11 +17,11 @@ This project walks from concept to delivery in a structured approach:
 git clone <repository-url>
 cd animal_names
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies with Poetry
+poetry install
 
 # Run the application (when implemented)
-python -m animal_names.cli --output /path/to/report.html
+poetry run python -m src.cli --output /path/to/report.html
 ```
 
 ## Architecture
@@ -35,16 +35,40 @@ The project is organized into several core components:
 ## Development Setup
 
 ```bash
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Install Poetry
+pip install poetry
 
 # Install dependencies
-pip install -r requirements.txt
+poetry install
 
-# Run tests (when implemented)
-pytest
+# Activate the virtual environment
+poetry shell
+
+# Run tests
+poetry run pytest
+
+# Run linting and type checking
+poetry run flake8 src tests
+poetry run mypy src tests
+poetry run black src tests
 ```
+
+## Code Conventions & Quality
+
+This project follows these quality standards:
+- **PEP 8** compliant code style, enforced by Flake8
+- **Black** code formatting with 88 character line limit
+- **Type annotations** for all functions and classes
+- **Google-style docstrings** for all public APIs
+- **Comprehensive test coverage** (>90%)
+
+## Branching Strategy
+
+We follow a trunk-based development model:
+- `main`: Protected branch for stable releases
+- Feature branches: Short-lived branches for specific tasks
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## License
 

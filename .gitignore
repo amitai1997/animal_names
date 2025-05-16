@@ -26,6 +26,10 @@ MANIFEST
 venv/
 ENV/
 
+# Poetry
+poetry.lock
+.poetry/
+
 # Testing
 .coverage
 htmlcov/
@@ -45,3 +49,9 @@ coverage.xml
 
 # Project specific
 report.html
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# mypy
+.mypy_cache/
