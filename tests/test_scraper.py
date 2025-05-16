@@ -2,6 +2,11 @@
 import pytest
 from pathlib import Path
 from typing import Dict, List
+import sys
+import os
+
+# Add parent directory to path to make imports work with pytest
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.scraper import normalize_entry, parse_table, fetch_html
 
 
