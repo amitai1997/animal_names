@@ -20,8 +20,8 @@ cd animal_names
 # Install dependencies with Poetry
 poetry install
 
-# Run the application (when implemented)
-poetry run python -m src.cli --output /path/to/report.html
+# Run the application
+python -m src.cli --output /path/to/report.html
 ```
 
 ## Architecture
@@ -33,6 +33,8 @@ The project is organized into several core components:
 - `src/cli.py`: Command-line interface
 
 ## Development Setup
+
+### Using Poetry (Recommended)
 
 ```bash
 # Install Poetry
@@ -53,6 +55,53 @@ poetry run mypy src tests
 poetry run black src tests
 ```
 
+### Using Helper Scripts
+
+For convenience, we've provided several helper scripts in the `/root` directory:
+
+```bash
+# Run tests
+python /root/project.py test
+
+# Run verbose tests
+python /root/project.py test -v
+
+# Run linting
+python /root/project.py lint
+
+# Format code
+python /root/project.py format
+
+# Install dependencies
+python /root/project.py install
+
+# Clean temporary files
+python /root/project.py clean
+```
+
+Git workflow is also simplified with:
+
+```bash
+# Check status
+python /root/git_workflow.py status
+
+# Commit changes
+python /root/git_workflow.py commit "your commit message"
+
+# Create a new branch
+python /root/git_workflow.py create-branch branch-name
+
+# Checkout a branch
+python /root/git_workflow.py checkout branch-name
+```
+
+Day-specific tasks can be run with:
+
+```bash
+# Run tasks for a specific day (1-6)
+python /root/day_runner.py <day_number>
+```
+
 ## Code Conventions & Quality
 
 This project follows these quality standards:
@@ -66,7 +115,7 @@ This project follows these quality standards:
 
 We follow a trunk-based development model:
 - `main`: Protected branch for stable releases
-- Feature branches: Short-lived branches for specific tasks
+- Feature branches: Short-lived branches for specific tasks (e.g., `day1-feature`)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 

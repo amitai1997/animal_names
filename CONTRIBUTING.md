@@ -12,6 +12,7 @@ We follow a trunk-based development model:
 ### Branch Naming Convention
 
 Use descriptive names that reference specific tasks or issue identifiers:
+- `day1-feature`, `day2-feature`, etc. for day-specific tasks
 - `feature/add-image-downloader`
 - `fix/broken-table-parser`
 - `docs/update-readme`
@@ -20,11 +21,89 @@ Use descriptive names that reference specific tasks or issue identifiers:
 ## Development Workflow
 
 1. Create a feature branch from `main`
+   ```bash
+   python /root/git_workflow.py create-branch branch-name
+   ```
+
 2. Make your changes with clear, atomic commits
+   ```bash
+   python /root/git_workflow.py commit "your commit message"
+   ```
+
 3. Run tests and ensure CI passes
-4. Submit a pull request to `main`
-5. Address review feedback
-6. Once approved, merge your changes
+   ```bash
+   python /root/project.py test -v
+   ```
+
+4. Format and lint your code
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+5. Submit a pull request to `main`
+6. Address review feedback
+7. Once approved, merge your changes
+
+## Development Helper Scripts
+
+We provide several helper scripts to simplify development:
+
+### Project Management Script (`/root/project.py`)
+
+```bash
+# Run tests
+python /root/project.py test
+
+# Run verbose tests
+python /root/project.py test -v
+
+# Run tests with a specific keyword
+python /root/project.py test -k "normalize"
+
+# Run linting
+python /root/project.py lint
+
+# Format code
+python /root/project.py format
+
+# Install dependencies
+python /root/project.py install
+
+# Clean temporary files
+python /root/project.py clean
+```
+
+### Git Workflow Script (`/root/git_workflow.py`)
+
+```bash
+# Check status
+python /root/git_workflow.py status
+
+# Commit changes
+python /root/git_workflow.py commit "your commit message"
+
+# Create a new branch
+python /root/git_workflow.py create-branch branch-name
+
+# Checkout a branch
+python /root/git_workflow.py checkout branch-name
+
+# Push changes
+python /root/git_workflow.py push
+
+# Pull changes
+python /root/git_workflow.py pull
+```
+
+### Day Runner Script (`/root/day_runner.py`)
+
+To automate day-specific tasks:
+
+```bash
+# Run tasks for a specific day (1-6)
+python /root/day_runner.py <day_number>
+```
 
 ## Commit Message Guidelines
 
