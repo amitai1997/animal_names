@@ -1,0 +1,1 @@
+"""Animal Names package initialization."""
