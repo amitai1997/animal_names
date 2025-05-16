@@ -6,6 +6,7 @@ focusing on the collateral adjective table.
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import Dict, List
 import requests
@@ -66,13 +67,23 @@ def normalize_entry(raw: str) -> str:
     
     # Parse with BeautifulSoup to remove HTML tags
     soup = BeautifulSoup(raw, 'html.parser')
-    text = soup.get_text(strip=True)
+    
+    # Process each element to handle (notes) properly
+    # Replace <small> tags with space before and after
+    for small in soup.find_all('small'):
+        small.insert_before(' ')
+        small.insert_after(' ')
+    
+    # Get text with whitespace preserved
+    text = soup.get_text()
     
     # Unescape HTML entities
     text = html.unescape(text)
     
-    # Normalize whitespace
-    return " ".join(text.split())
+    # Normalize whitespace - collapse multiple spaces to single space
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
 
 
 def parse_table(html_path: Path) -> Dict[str, List[str]]:
@@ -148,7 +159,11 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         if 'rowspan' in animal_cell.attrs or 'colspan' in animal_cell.attrs:
             logger.warning(f"Row contains merged cells (rowspan/colspan). This might affect parsing accuracy.")
         
-        # Extract and normalize animal name
+        # Extract and normalize animal name, handling footnotes in <small> tags
+        # Replace <small> tags with space before and after
+        for small in animal_cell.find_all('small'):
+            small.decompose()  # Remove the <small> tag and its contents
+        
         animal_name = normalize_entry(str(animal_cell))
         if not animal_name:
             logger.debug(f"Skipping row with empty animal name: {row}")
