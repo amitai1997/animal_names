@@ -6,8 +6,9 @@ import pytest
 # Add the root directory to Python's path to make imports work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+
 # Define pytest markers
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""
     config.addinivalue_line(
         "markers", "online: marks tests that require internet connection"

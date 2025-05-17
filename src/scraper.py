@@ -9,8 +9,8 @@ import logging
 import re
 from pathlib import Path
 from typing import Dict, List
-import requests
-from bs4 import BeautifulSoup
+import requests  # type: ignore
+from bs4 import BeautifulSoup, Tag  # type: ignore
 import html
 
 # Configure logger
@@ -77,7 +77,7 @@ def normalize_entry(raw: str) -> str:
         small.insert_after(" ")
 
     # Get text with whitespace preserved
-    text = soup.get_text()
+    text = soup.get_text()  # type: str
 
     # Unescape HTML entities
     text = html.unescape(text)
@@ -116,11 +116,12 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
     # Find the "Collateral adjective" table by header text
     target_table = None
     for table in soup.find_all("table"):
-        headers = table.find_all("th")
-        for header in headers:
-            if "Collateral adjective" in header.get_text():
-                target_table = table
-                break
+        if isinstance(table, Tag):
+            headers = table.find_all("th")
+            for header in headers:
+                if "Collateral adjective" in header.get_text():
+                    target_table = table
+                    break
         if target_table:
             break
 
@@ -131,7 +132,13 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
 
     # Identify column indices for "Animal" and "Collateral adjective"
     header_row = target_table.find("tr")
-    headers = [th.get_text(strip=True) for th in header_row.find_all("th")]
+    if not isinstance(header_row, Tag):
+        error_msg = "Header row is not a Tag"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    headers_elements = header_row.find_all("th")
+    headers: List[str] = [th.get_text(strip=True) for th in headers_elements]
 
     try:
         animal_idx = headers.index("Animal")
@@ -147,59 +154,61 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
     result: Dict[str, List[str]] = {}
 
     # Process rows in the table body
-    rows = target_table.find_all("tr")[1:]  # Skip header row
-    for row in rows:
-        cells = row.find_all(["td", "th"])
+    if isinstance(target_table, Tag):
+        rows = target_table.find_all("tr")[1:]  # Skip header row
+        for row in rows:
+            if isinstance(row, Tag):
+                cells = row.find_all(["td", "th"])
 
-        # Skip rows with insufficient cells
-        if len(cells) <= max(animal_idx, adjective_idx):
-            logger.warning(f"Skipping row with insufficient cells: {row}")
-            continue
+                # Skip rows with insufficient cells
+                if len(cells) <= max(animal_idx, adjective_idx):
+                    logger.warning(f"Skipping row with insufficient cells: {row}")
+                    continue
 
-        animal_cell = cells[animal_idx]
-        adjective_cell = cells[adjective_idx]
+                animal_cell = cells[animal_idx]
+                adjective_cell = cells[adjective_idx]
 
-        # Handle rowspan/colspan
-        if "rowspan" in animal_cell.attrs or "colspan" in animal_cell.attrs:
-            logger.warning(
-                f"Row contains merged cells (rowspan/colspan). This might affect parsing accuracy."
-            )
+                # Handle rowspan/colspan
+                if isinstance(animal_cell, Tag) and ("rowspan" in animal_cell.attrs or "colspan" in animal_cell.attrs):
+                    logger.warning(
+                        "Row contains merged cells (rowspan/colspan). This might affect parsing accuracy."
+                    )
 
-        # Extract and normalize animal name, handling footnotes in <small> tags
-        # Replace <small> tags with space before and after
-        for small in animal_cell.find_all("small"):
-            small.decompose()  # Remove the <small> tag and its contents
+                # Extract and normalize animal name, handling footnotes in <small> tags
+                if isinstance(animal_cell, Tag):
+                    for small in animal_cell.find_all("small"):
+                        small.decompose()  # Remove the <small> tag and its contents
 
-        animal_name = normalize_entry(str(animal_cell))
-        if not animal_name:
-            logger.debug(f"Skipping row with empty animal name: {row}")
-            continue
+                animal_name = normalize_entry(str(animal_cell))
+                if not animal_name:
+                    logger.debug(f"Skipping row with empty animal name: {row}")
+                    continue
 
-        # Extract and normalize adjective text
-        adjective_text = normalize_entry(str(adjective_cell))
-        if not adjective_text:
-            logger.debug(f"Skipping row with empty adjective: {row}")
-            continue
+                # Extract and normalize adjective text
+                adjective_text = normalize_entry(str(adjective_cell))
+                if not adjective_text:
+                    logger.debug(f"Skipping row with empty adjective: {row}")
+                    continue
 
-        # Split adjectives on commas or semicolons
-        adjectives = []
-        for separator in [";", ","]:
-            if separator in adjective_text:
-                adjectives.extend(
-                    [adj.strip() for adj in adjective_text.split(separator)]
-                )
-                break
-        else:
-            # If no separator found, use the whole text
-            adjectives = [adjective_text]
+                # Split adjectives on commas or semicolons
+                adjectives = []
+                for separator in [";", ","]:
+                    if separator in adjective_text:
+                        adjectives.extend(
+                            [adj.strip() for adj in adjective_text.split(separator)]
+                        )
+                        break
+                else:
+                    # If no separator found, use the whole text
+                    adjectives = [adjective_text]
 
-        # Add entries to result dictionary
-        for adjective in adjectives:
-            adj_lower = adjective.lower()
-            if adj_lower not in result:
-                result[adj_lower] = []
-            if animal_name not in result[adj_lower]:
-                result[adj_lower].append(animal_name)
+                # Add entries to result dictionary
+                for adjective in adjectives:
+                    adj_lower = adjective.lower()
+                    if adj_lower not in result:
+                        result[adj_lower] = []
+                    if animal_name not in result[adj_lower]:
+                        result[adj_lower].append(animal_name)
 
     logger.info(f"Extracted {len(result)} adjective-animal mappings")
     return result

@@ -1,16 +1,15 @@
 """Tests for the scraper module."""
 import pytest
 from pathlib import Path
-from typing import Dict, List
 import sys
 import os
 
 # Add parent directory to path to make imports work with pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.scraper import normalize_entry, parse_table, fetch_html
+from src.scraper import normalize_entry, parse_table
 
 
-def test_normalize_entry():
+def test_normalize_entry() -> None:
     """Test that HTML tags and whitespace are properly removed from entries."""
     # HTML with tags and excessive whitespace
     html_input = "<p>  Test   <small>(note)</small>  text  </p>"
@@ -26,7 +25,7 @@ def test_normalize_entry():
     assert normalize_entry("&lt;test&gt;") == "<test>"
 
 
-def test_parse_table_with_single_adjective(tmp_path):
+def test_parse_table_with_single_adjective(tmp_path: Path) -> None:
     """Test parsing a table with a single adjective-animal pair."""
     fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
 
@@ -38,7 +37,7 @@ def test_parse_table_with_single_adjective(tmp_path):
     assert len(result["avian"]) == 1
 
 
-def test_parse_table_with_multiple_adjectives(tmp_path):
+def test_parse_table_with_multiple_adjectives(tmp_path: Path) -> None:
     """Test parsing a table with multiple adjectives in one cell."""
     fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
 
@@ -51,7 +50,7 @@ def test_parse_table_with_multiple_adjectives(tmp_path):
     assert "cat" in result["felid"]
 
 
-def test_parse_table_with_footnotes(tmp_path):
+def test_parse_table_with_footnotes(tmp_path: Path) -> None:
     """Test parsing a table with footnotes in cells."""
     fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
 
@@ -64,16 +63,14 @@ def test_parse_table_with_footnotes(tmp_path):
 
 
 @pytest.mark.online
-def test_fetch_html(tmp_path):
+def test_fetch_html(tmp_path: Path) -> None:
     """Test fetching HTML from the Wikipedia page (requires internet)."""
     # This test requires internet connection, so we'll skip it in regular test runs
-    # Create a temporary file path
-    dest_path = tmp_path / "test_fetch.html"
 
     # We're not actually running this test now, so we'll just implement the structure
-    # fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", dest_path)
-    # assert dest_path.exists()
-    # assert dest_path.stat().st_size > 0
+    # fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", tmp_path)
+    # assert tmp_path.exists()
+    # assert tmp_path.stat().st_size > 0
 
     # Since we're not running the test, we'll just pass for now
     pass

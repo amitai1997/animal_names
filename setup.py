@@ -1,5 +1,5 @@
 """Setup script for animal_names package."""
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages  # type: ignore
 
 setup(
     name="animal_names",
