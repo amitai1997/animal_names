@@ -77,3 +77,32 @@ def test_fetch_html(tmp_path):
     
     # Since we're not running the test, we'll just pass for now
     pass
+
+
+def test_parse_table_empty_tbody(tmp_path):
+    """Test parsing a table with an empty tbody."""
+    # Create a simple HTML file with a table that has a header but no body rows
+    empty_table_html = '''
+    <html>
+    <body>
+        <table>
+            <tr>
+                <th>Animal</th>
+                <th>Collateral adjective</th>
+            </tr>
+            <!-- No body rows -->
+        </table>
+    </body>
+    </html>
+    '''
+    
+    # Save to a temporary file
+    empty_table_path = tmp_path / "empty_table.html"
+    with open(empty_table_path, 'w', encoding='utf-8') as f:
+        f.write(empty_table_html)
+    
+    # Parse the empty table
+    result = parse_table(empty_table_path)
+    
+    # Check that we get an empty dictionary
+    assert result == {}

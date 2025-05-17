@@ -99,6 +99,10 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
     Raises:
         FileNotFoundError: If the HTML file doesn't exist.
         ValueError: If the table couldn't be found or parsed.
+        
+    Note:
+        This function can handle variations in column names, such as
+        "Animal" or "Trivial name" for the animal column.
     """
     logger.info(f"Parsing table from {html_path}")
     
@@ -127,15 +131,22 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    # Identify column indices for "Animal" and "Collateral adjective"
+    # Identify column indices for "Animal" (or "Trivial name") and "Collateral adjective"
     header_row = target_table.find('tr')
     headers = [th.get_text(strip=True) for th in header_row.find_all('th')]
     
-    try:
-        animal_idx = headers.index('Animal')
-        adjective_idx = headers.index('Collateral adjective')
-    except ValueError:
-        error_msg = "Required columns 'Animal' or 'Collateral adjective' not found in table"
+    # Try to find animal and adjective columns with flexible matching
+    animal_idx = None
+    adjective_idx = None
+    
+    for idx, header in enumerate(headers):
+        if header in ['Animal', 'Trivial name'] or 'animal' in header.lower():
+            animal_idx = idx
+        elif 'collateral adjective' in header.lower():
+            adjective_idx = idx
+    
+    if animal_idx is None or adjective_idx is None:
+        error_msg = f"Required columns 'Animal/Trivial name' or 'Collateral adjective' not found in table. Headers: {headers}"
         logger.error(error_msg)
         raise ValueError(error_msg)
     
@@ -144,6 +155,11 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
     
     # Process rows in the table body
     rows = target_table.find_all('tr')[1:]  # Skip header row
+    
+    # If no rows found (empty tbody), return an empty dict
+    if not rows:
+        logger.warning("No rows found in table body")
+        return {}
     for row in rows:
         cells = row.find_all(['td', 'th'])
         
