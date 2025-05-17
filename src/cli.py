@@ -31,22 +31,22 @@ def parse_args():
 def main():
     """Main entry point for the CLI."""
     args = parse_args()
-    
+
     # Configure logging based on verbosity
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     elif args.quiet:
         logging.getLogger().setLevel(logging.ERROR)
-    
+
     # Ensure output directories exist
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.image_dir.mkdir(parents=True, exist_ok=True)
-    
+
     logger.info("Starting animal names scraper")
-    
+
     # TODO: Implement the actual scraping, downloading, and rendering pipeline
     # This will be filled in during Day 1, 2, and 3 implementations
-    
+
     logger.info(f"Report generated at {args.output}")
     return 0
 
