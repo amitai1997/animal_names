@@ -25,6 +25,7 @@ animal_names/
 ├── pyproject.toml       # Poetry configuration
 ├── setup.py             # Package setup
 ├── pytest.ini          # Pytest configuration
+├── .pre-commit-config.yaml # Pre-commit hooks configuration
 ├── README.md           # Project documentation
 └── CONTRIBUTING.md     # Contribution guidelines
 ```
@@ -58,6 +59,9 @@ python /root/project.py format
 
 # Install dependencies
 python /root/project.py install
+
+# Install and configure pre-commit hooks
+python /root/project.py precommit
 
 # Clean temporary files
 python /root/project.py clean
@@ -117,6 +121,34 @@ This utility allows running commands in specific directories:
 python /root/run_in_dir.py /path/to/directory "command to run"
 ```
 
+## Code Quality & Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality. These hooks run automatically before each commit and check:
+
+- Trailing whitespace
+- End of file issues
+- YAML syntax
+- Large file additions
+- Python debug statements
+- Black code formatting
+- Flake8 linting
+- MyPy type checking
+
+To set up the pre-commit hooks:
+
+```bash
+python /root/project.py precommit
+```
+
+Once installed, pre-commit will automatically run these checks when you try to commit changes. If any issues are found, the commit will be aborted and you'll need to fix the issues before committing.
+
+You can also run the hooks manually on all files:
+
+```bash
+# Run in virtual environment
+/tmp/venv/bin/pre-commit run --all-files
+```
+
 ## Development Workflow
 
 ### Day 1: Scraper Implementation
@@ -136,7 +168,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/project.py test -v
    ```
 
-4. Commit changes:
+4. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+5. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(scraper): implement HTML parsing"
    ```
@@ -155,7 +193,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/project.py test -v
    ```
 
-4. Commit changes:
+4. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+5. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(downloader): implement image downloading"
    ```
@@ -176,7 +220,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/project.py test -v
    ```
 
-5. Commit changes:
+5. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(renderer): implement HTML report generation"
    ```
@@ -195,7 +245,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/run_project_tests.py
    ```
 
-4. Commit changes:
+4. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+5. Commit changes:
    ```bash
    python /root/git_workflow.py commit "test: add comprehensive tests"
    ```
@@ -216,7 +272,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/project.py test -v
    ```
 
-5. Commit changes:
+5. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "docs: update documentation"
    ```
@@ -232,7 +294,13 @@ python /root/run_in_dir.py /path/to/directory "command to run"
 
 3. Final testing and verification
 
-4. Commit changes:
+4. Format code and check for issues:
+   ```bash
+   python /root/project.py format
+   python /root/project.py lint
+   ```
+
+5. Commit changes:
    ```bash
    python /root/git_workflow.py commit "chore: prepare for release"
    ```
@@ -242,7 +310,7 @@ python /root/run_in_dir.py /path/to/directory "command to run"
 ### Common Issues
 
 1. **Import Errors**
-   
+
    If you encounter import errors when running tests, make sure the project is installed in development mode:
    ```bash
    python /root/project.py install
@@ -255,7 +323,14 @@ python /root/run_in_dir.py /path/to/directory "command to run"
    python /root/project.py test -v
    ```
 
-3. **Git Issues**
+3. **Pre-commit Hook Failures**
+
+   If pre-commit hooks are failing:
+   - Fix formatting issues with `python /root/project.py format`
+   - Fix linting issues manually by addressing the reported errors
+   - Run `python /root/project.py precommit` to reinstall hooks if needed
+
+4. **Git Issues**
 
    If you encounter git-related issues, use the git_workflow.py helper:
    ```bash

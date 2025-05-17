@@ -53,6 +53,9 @@ poetry run pytest
 poetry run flake8 src tests
 poetry run mypy src tests
 poetry run black src tests
+
+# Install pre-commit hooks
+poetry run pre-commit install
 ```
 
 ### Using Helper Scripts
@@ -74,6 +77,9 @@ python /root/project.py format
 
 # Install dependencies
 python /root/project.py install
+
+# Install pre-commit hooks
+python /root/project.py precommit
 
 # Clean temporary files
 python /root/project.py clean
@@ -102,6 +108,27 @@ Day-specific tasks can be run with:
 python /root/day_runner.py <day_number>
 ```
 
+## Code Quality and Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. These hooks run automatically before each commit and check for:
+
+- Code formatting (Black)
+- Linting (Flake8)
+- Type checking (MyPy)
+- Trailing whitespace
+- End of file issues
+- And more
+
+To install the pre-commit hooks:
+
+```bash
+# Using Poetry
+poetry run pre-commit install
+
+# Using helper script
+python /root/project.py precommit
+```
+
 ## Code Conventions & Quality
 
 This project follows these quality standards:
@@ -118,6 +145,7 @@ We follow a trunk-based development model:
 - Feature branches: Short-lived branches for specific tasks (e.g., `day1-feature`)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for more detailed development instructions.
 
 ## License
 
