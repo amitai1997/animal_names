@@ -138,11 +138,11 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         raise ValueError(error_msg)
 
     headers_elements = header_row.find_all("th")
-    headers: List[str] = [th.get_text(strip=True) for th in headers_elements]
+    header_texts: List[str] = [th.get_text(strip=True) for th in headers_elements]
 
     try:
-        animal_idx = headers.index("Animal")
-        adjective_idx = headers.index("Collateral adjective")
+        animal_idx = header_texts.index("Animal")
+        adjective_idx = header_texts.index("Collateral adjective")
     except ValueError:
         error_msg = (
             "Required columns 'Animal' or 'Collateral adjective' not found in table"
@@ -169,7 +169,9 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
                 adjective_cell = cells[adjective_idx]
 
                 # Handle rowspan/colspan
-                if isinstance(animal_cell, Tag) and ("rowspan" in animal_cell.attrs or "colspan" in animal_cell.attrs):
+                if isinstance(animal_cell, Tag) and (
+                    "rowspan" in animal_cell.attrs or "colspan" in animal_cell.attrs
+                ):
                     logger.warning(
                         "Row contains merged cells (rowspan/colspan). This might affect parsing accuracy."
                     )
