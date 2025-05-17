@@ -1,9 +1,12 @@
 """Tests for the scraper module."""
+import os
+import sys
 from pathlib import Path
-
+from src.scraper import normalize_entry, parse_table
 import pytest
 
-from src.scraper import normalize_entry, parse_table
+# Add parent directory to path to make imports work with pytest
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def test_normalize_entry() -> None:
