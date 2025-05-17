@@ -2,6 +2,8 @@
 
 A Python application that scrapes Wikipedia's "List of animal names" page, extracts collateral adjectives and their associated animals, downloads images, and generates an HTML report.
 
+> **Note**: This is a test edit to verify the text-editor tool is working properly.
+
 ## Project Overview
 
 This project walks from concept to delivery in a structured approach:
