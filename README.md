@@ -56,6 +56,9 @@ poetry run black src tests
 
 # Install pre-commit hooks
 poetry run pre-commit install
+
+# Run pre-commit checks manually
+poetry run pre-commit run --all-files
 ```
 
 ### Using Helper Scripts
@@ -80,6 +83,9 @@ python /root/project.py install
 
 # Install pre-commit hooks
 python /root/project.py precommit
+
+# Run pre-commit checks on all files
+python /root/project.py check
 
 # Clean temporary files
 python /root/project.py clean
@@ -128,6 +134,18 @@ poetry run pre-commit install
 # Using helper script
 python /root/project.py precommit
 ```
+
+To manually run the pre-commit checks on all files (without committing):
+
+```bash
+# Using Poetry
+poetry run pre-commit run --all-files
+
+# Using helper script
+python /root/project.py check
+```
+
+If you're using empty commits to test the hooks like `git commit --allow-empty`, the hooks may report "no files to check" since no files are staged. Use the `check` command instead to properly test the hooks on all files.
 
 ## Code Conventions & Quality
 

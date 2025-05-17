@@ -63,6 +63,9 @@ python /root/project.py install
 # Install and configure pre-commit hooks
 python /root/project.py precommit
 
+# Run pre-commit checks on all files
+python /root/project.py check
+
 # Clean temporary files
 python /root/project.py clean
 ```
@@ -145,9 +148,22 @@ Once installed, pre-commit will automatically run these checks when you try to c
 You can also run the hooks manually on all files:
 
 ```bash
-# Run in virtual environment
+# Using the helper script (recommended)
+python /root/project.py check
+
+# Or directly in virtual environment
 /tmp/venv/bin/pre-commit run --all-files
 ```
+
+### Testing Pre-commit Hooks
+
+If you're using empty commits to test the hooks like `git commit --allow-empty`, the hooks may report "no files to check" since no files are staged. Use the `check` command instead to properly test the hooks on all files:
+
+```bash
+python /root/project.py check
+```
+
+This will create a temporary file, stage it, and run all pre-commit hooks on all files, giving you a comprehensive view of any issues in the codebase.
 
 ## Development Workflow
 
@@ -174,7 +190,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-5. Commit changes:
+5. Run pre-commit checks to catch any remaining issues:
+   ```bash
+   python /root/project.py check
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(scraper): implement HTML parsing"
    ```
@@ -199,7 +220,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-5. Commit changes:
+5. Run pre-commit checks:
+   ```bash
+   python /root/project.py check
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(downloader): implement image downloading"
    ```
@@ -226,7 +252,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-6. Commit changes:
+6. Run pre-commit checks:
+   ```bash
+   python /root/project.py check
+   ```
+
+7. Commit changes:
    ```bash
    python /root/git_workflow.py commit "feat(renderer): implement HTML report generation"
    ```
@@ -251,7 +282,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-5. Commit changes:
+5. Run pre-commit checks:
+   ```bash
+   python /root/project.py check
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "test: add comprehensive tests"
    ```
@@ -278,7 +314,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-6. Commit changes:
+6. Run pre-commit checks:
+   ```bash
+   python /root/project.py check
+   ```
+
+7. Commit changes:
    ```bash
    python /root/git_workflow.py commit "docs: update documentation"
    ```
@@ -300,7 +341,12 @@ You can also run the hooks manually on all files:
    python /root/project.py lint
    ```
 
-5. Commit changes:
+5. Run pre-commit checks:
+   ```bash
+   python /root/project.py check
+   ```
+
+6. Commit changes:
    ```bash
    python /root/git_workflow.py commit "chore: prepare for release"
    ```
@@ -328,9 +374,14 @@ You can also run the hooks manually on all files:
    If pre-commit hooks are failing:
    - Fix formatting issues with `python /root/project.py format`
    - Fix linting issues manually by addressing the reported errors
+   - Run `python /root/project.py check` to test if all issues are fixed
    - Run `python /root/project.py precommit` to reinstall hooks if needed
 
-4. **Git Issues**
+4. **Empty Commits and Pre-commit Hooks**
+
+   If you're trying to test pre-commit hooks with empty commits (`git commit --allow-empty`), the hooks may report "no files to check". Use `python /root/project.py check` instead to properly test the hooks.
+
+5. **Git Issues**
 
    If you encounter git-related issues, use the git_workflow.py helper:
    ```bash
