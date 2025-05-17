@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E402
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv
+max-complexity = 10
+per-file-ignores =
+    # Ignore complexity in parse_table function
+    src/scraper.py:C901

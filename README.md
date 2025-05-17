@@ -12,6 +12,66 @@ This project walks from concept to delivery in a structured approach:
 3. Render an HTML report showing adjectives with their associated animals and images
 4. Validate with automated tests
 
+## Linting and Code Quality
+
+Code quality is enforced through multiple tools:
+
+### Flake8 Configuration
+
+For linting, we use Flake8 with the following configuration in `.flake8`:
+```ini
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E402
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv
+max-complexity = 10
+per-file-ignores =
+    # Ignore complexity in certain functions
+    src/scraper.py:C901
+```
+
+You can run flake8 manually:
+```bash
+cd /root/projects/animal_names
+.venv/bin/flake8
+```
+
+### Pre-commit Configuration
+
+If you're experiencing issues with pre-commit hooks, we've simplified the configuration in `.pre-commit-config.yaml` to include only the most reliable checks:
+
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: debug-statements
+```
+
+More complex hooks for Black, Flake8, isort, and mypy are commented out but can be enabled once your environment is properly set up.
+
+### Manual Checks
+
+You can also run quality checks manually:
+
+```bash
+# For formatting
+python -m black .
+
+# For linting
+python -m flake8
+
+# For import sorting
+python -m isort .
+
+# For type checking
+python -m mypy src/ tests/
+```
+
 ## Quick Start
 
 ```bash

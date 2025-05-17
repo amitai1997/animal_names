@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Command-line interface for the animal_names project.
-"""
+"""Command-line interface for the animal_names project."""
 import argparse
 import logging
 import sys
@@ -50,7 +48,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Main entry point for the CLI."""
+    """Execute the main CLI program."""
     args = parse_args()
 
     # Configure logging based on verbosity

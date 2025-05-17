@@ -1,17 +1,18 @@
 """
-Scraper module for extracting collateral adjectives and animal mappings from Wikipedia.
+Scraper module for extracting collateral adjectives and animal mappings.
 
 This module fetches and parses the "List of animal names" Wikipedia page,
 focusing on the collateral adjective table.
 """
 
+import html
 import logging
 import re
 from pathlib import Path
 from typing import Dict, List
+
 import requests  # type: ignore
 from bs4 import BeautifulSoup, Tag  # type: ignore
-import html
 
 # Configure logger
 logging.basicConfig(
@@ -34,7 +35,8 @@ def fetch_html(url: str, dest: Path) -> None:
     logger.info(f"Fetching HTML from {url}")
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
     }
 
     try:
@@ -145,7 +147,7 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         adjective_idx = header_texts.index("Collateral adjective")
     except ValueError:
         error_msg = (
-            "Required columns 'Animal' or 'Collateral adjective' not found in table"
+            "Required columns 'Animal' or 'Collateral adjective' " "not found in table"
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
@@ -173,13 +175,15 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
                     "rowspan" in animal_cell.attrs or "colspan" in animal_cell.attrs
                 ):
                     logger.warning(
-                        "Row contains merged cells (rowspan/colspan). This might affect parsing accuracy."
+                        "Row contains merged cells (rowspan/colspan). "
+                        "This might affect parsing accuracy."
                     )
 
                 # Extract and normalize animal name, handling footnotes in <small> tags
                 if isinstance(animal_cell, Tag):
                     for small in animal_cell.find_all("small"):
-                        small.decompose()  # Remove the <small> tag and its contents
+                        # Remove the <small> tag and its contents
+                        small.decompose()
 
                 animal_name = normalize_entry(str(animal_cell))
                 if not animal_name:

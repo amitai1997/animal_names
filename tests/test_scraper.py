@@ -1,11 +1,8 @@
 """Tests for the scraper module."""
-import pytest
 from pathlib import Path
-import sys
-import os
 
-# Add parent directory to path to make imports work with pytest
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import pytest
+
 from src.scraper import normalize_entry, parse_table
 
 
@@ -68,7 +65,10 @@ def test_fetch_html(tmp_path: Path) -> None:
     # This test requires internet connection, so we'll skip it in regular test runs
 
     # We're not actually running this test now, so we'll just implement the structure
-    # fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", tmp_path)
+    # fetch_html(
+    #     "https://en.wikipedia.org/wiki/List_of_animal_names",
+    #     tmp_path
+    # )
     # assert tmp_path.exists()
     # assert tmp_path.stat().st_size > 0
 
