@@ -125,14 +125,30 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
 
     # Find the "Collateral adjective" table by header text
     target_table = None
-    for table in soup.find_all("table"):
+    animal_col_name = ""
+    for table in soup.find_all("table", class_=["wikitable", "sortable"]):
         if isinstance(table, Tag):
             headers = table.find_all("th")
             for header in headers:
                 if "Collateral adjective" in header.get_text():
                     target_table = table
-                    break
-        if target_table:
+                    
+                    # Find the column that likely contains animal names
+                    possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
+                    header_texts = [th.get_text(strip=True) for th in headers]
+                    
+                    for col in possible_animal_cols:
+                        if col in header_texts:
+                            animal_col_name = col
+                            logger.info(f"Found table with '{col}' and 'Collateral adjective' columns")
+                            break
+                    
+                    if animal_col_name:  # Found a valid animal column
+                        break
+                    else:
+                        # Keep looking for a better table with an animal column
+                        target_table = None
+        if target_table and animal_col_name:
             break
 
     if not target_table:
@@ -140,7 +156,7 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    # Identify column indices for "Animal" and "Collateral adjective"
+    # Identify column indices for animal column and "Collateral adjective"
     header_row = target_table.find("tr")
     if not isinstance(header_row, Tag):
         error_msg = "Header row is not a Tag"
@@ -151,11 +167,12 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     header_texts: List[str] = [th.get_text(strip=True) for th in headers_elements]
 
     try:
-        animal_idx = header_texts.index("Animal")
+        animal_idx = header_texts.index(animal_col_name)
         adjective_idx = header_texts.index("Collateral adjective")
+        logger.info(f"Using '{animal_col_name}' column (index {animal_idx}) and 'Collateral adjective' column (index {adjective_idx})")
     except ValueError:
         error_msg = (
-            "Required columns 'Animal' or 'Collateral adjective' " "not found in table"
+            f"Required columns '{animal_col_name}' or 'Collateral adjective' " "not found in table"
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
