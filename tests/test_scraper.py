@@ -84,10 +84,10 @@ def test_parse_table_with_empty_tbody(tmp_path: Path) -> None:
     empty_table_path = tmp_path / "empty_table.html"
     with open(empty_table_path, "w", encoding="utf-8") as f:
         f.write(empty_table_html)
-    
+
     # Parse the empty table
     result = parse_table(empty_table_path)
-    
+
     # The result should be an empty dictionary
     assert result == {}
 
