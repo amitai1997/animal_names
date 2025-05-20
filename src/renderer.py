@@ -96,7 +96,20 @@ def copy_static_assets(src_dir: Path, dest_dir: Path) -> None:
     if dest_static.exists():
         shutil.rmtree(dest_static)
     
-    shutil.copytree(src_dir, dest_static)
+    # Create the destination directory explicitly
+    dest_static.mkdir(parents=True, exist_ok=True)
+    
+    # Manually copy files to avoid the 'same source and destination' error
+    for item in src_dir.glob('**/*'):
+        if item.is_file():
+            # Calculate relative path
+            rel_path = item.relative_to(src_dir)
+            # Create destination path
+            dest_path = dest_static / rel_path
+            # Ensure parent directory exists
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            # Copy the file
+            shutil.copy2(item, dest_path)
 
 
 def load_manifest(manifest_path: Path) -> Dict[str, List[Dict]]:
