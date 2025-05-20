@@ -95,25 +95,25 @@ def copy_static_assets(src_dir: Path, dest_dir: Path) -> None:
         )
         return
 
-    # Use shutil to copy the entire directory
-    # If destination exists, it will merge the contents
     dest_static = dest_dir / "static"
+
+    # Prevent deleting source if source and destination are the same
+    if src_dir.resolve() == dest_static.resolve():
+        logger.warning(
+            f"Source and destination static directories are the same ({src_dir}), skipping copy to avoid data loss."
+        )
+        return
+
     if dest_static.exists():
         shutil.rmtree(dest_static)
 
-    # Create the destination directory explicitly
     dest_static.mkdir(parents=True, exist_ok=True)
 
-    # Manually copy files to avoid the 'same source and destination' error
     for item in src_dir.glob("**/*"):
         if item.is_file():
-            # Calculate relative path
             rel_path = item.relative_to(src_dir)
-            # Create destination path
             dest_path = dest_static / rel_path
-            # Ensure parent directory exists
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            # Copy the file
             shutil.copy2(item, dest_path)
 
 
