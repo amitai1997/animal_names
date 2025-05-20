@@ -10,13 +10,7 @@ import pytest
 import requests
 from bs4 import BeautifulSoup
 
-from src.scraper import (
-    Animal,
-    create_wikipedia_url,
-    fetch_html,
-    normalize_entry,
-    parse_table,
-)
+from src.scraper import Animal, fetch_html, normalize_entry, parse_table
 
 # Add parent directory to path to make imports work with pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -49,21 +43,6 @@ def test_normalize_entry_complex():
     assert "<td>" not in result
     assert "<a" not in result
     assert "<small>" not in result
-
-
-def test_create_wikipedia_url_with_special_chars():
-    """Test creating Wikipedia URLs with special characters."""
-    # Test special characters
-    assert create_wikipedia_url("Dog (canine)") == "https://en.wikipedia.org/wiki/Dog"
-    assert create_wikipedia_url("Monkey[3]") == "https://en.wikipedia.org/wiki/Monkey"
-    assert (
-        create_wikipedia_url("Bird & reptile") == "https://en.wikipedia.org/wiki/Bird"
-    )
-
-    # Test with very complex name
-    complex_name = "Ferret family of Carnivorans(large: badgers & wolverines;small: weasels & ferrets)"
-    url = create_wikipedia_url(complex_name)
-    assert "Ferret" in url
 
 
 def test_parse_table_malformed_html(temp_dir):

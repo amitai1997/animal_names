@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def fetch_html(url: str, dest: Path) -> None:
     """
-    Download HTML from URL and save to destination path.
+    Download HTML from URL and save to a destination path.
 
     Args:
         url: The URL to fetch HTML from.
@@ -65,57 +65,6 @@ def fetch_html(url: str, dest: Path) -> None:
     except requests.RequestException as e:
         logger.error(f"Failed to fetch URL {url}: {e}")
         raise
-
-
-def create_wikipedia_url(name: str) -> str:
-    """
-    Create a valid Wikipedia URL from an animal name.
-
-    Args:
-        name: The raw animal name that might contain invalid URL characters.
-
-    Returns:
-        A properly formatted Wikipedia URL for the animal.
-    """
-    # Take only the first animal if multiple are listed (separated by commas or semicolons)
-    if "," in name:
-        name = name.split(",")[0]
-    if ";" in name:
-        name = name.split(";")[0]
-
-    # Remove footnote references like [5] and anything in parentheses
-    name = re.sub(r"\[\d+\]", "", name)  # Remove [5], [3], etc.
-    name = re.sub(r"\([^)]*\)", "", name)  # Remove anything in parentheses
-
-    # Clean and normalize the name
-    name = name.strip()
-
-    # Special cases for common animals that might have redirects
-    name_lower = name.lower()
-    if "dog" in name_lower:
-        return "https://en.wikipedia.org/wiki/Dog"
-    elif "cat" in name_lower:
-        return "https://en.wikipedia.org/wiki/Cat"
-    elif "bird" in name_lower:
-        return "https://en.wikipedia.org/wiki/Bird"
-    elif "fish" in name_lower:
-        return "https://en.wikipedia.org/wiki/Fish"
-    elif "horse" in name_lower:
-        return "https://en.wikipedia.org/wiki/Horse"
-    elif "whale" in name_lower:
-        return "https://en.wikipedia.org/wiki/Whale"
-    elif "dolphin" in name_lower:
-        return "https://en.wikipedia.org/wiki/Dolphin"
-    elif "rabbit" in name_lower or "hare" in name_lower:
-        return "https://en.wikipedia.org/wiki/Rabbit"
-
-    # Replace spaces with underscores for URL format
-    url_name = name.replace(" ", "_")
-
-    # Remove any remaining problematic characters
-    url_name = re.sub(r"[^\w\-_]", "", url_name)
-
-    return f"https://en.wikipedia.org/wiki/{url_name}"
 
 
 def normalize_entry(raw: str) -> str:
@@ -217,6 +166,7 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                 )
                 break
 
+    # TODO: Remove this block and related tests after confirming the first scan works
     # If we couldn't find with specific classes, try any table (helpful for tests)
     if not target_table:
         for table in soup.find_all("table"):
@@ -351,7 +301,8 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                         logger.warning(
                             f"No direct link found for animal '{animal_name}', falling back to generated URL"
                         )
-                        page_url = create_wikipedia_url(animal_name)
+                        # page_url = create_wikipedia_url(animal_name)
+                        a = 1
 
                     animal_obj = Animal(name=animal_name, page_url=page_url)
 

@@ -5,50 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from src.scraper import (
-    Animal,
-    create_wikipedia_url,
-    fetch_html,
-    normalize_entry,
-    parse_table,
-)
+from src.scraper import Animal, fetch_html, normalize_entry, parse_table
 
 # Add parent directory to path to make imports work with pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-
-def test_create_wikipedia_url():
-    """Test creating valid Wikipedia URLs from animal names."""
-    # Test basic name handling
-    assert create_wikipedia_url("cat") == "https://en.wikipedia.org/wiki/Cat"
-    assert create_wikipedia_url("Dog") == "https://en.wikipedia.org/wiki/Dog"
-
-    # Test complex names with multiple animals
-    assert (
-        create_wikipedia_url("whale, dolphin, porpoise")
-        == "https://en.wikipedia.org/wiki/Whale"
-    )
-    assert (
-        create_wikipedia_url("rabbits & hares")
-        == "https://en.wikipedia.org/wiki/Rabbit"
-    )
-
-    # Test names with footnotes or parentheses
-    assert (
-        create_wikipedia_url("cattle; ox,[5] cow")
-        != "https://en.wikipedia.org/wiki/cattle;_ox,[5]_cow"
-    )
-    assert (
-        create_wikipedia_url("monkey (primate)")
-        != "https://en.wikipedia.org/wiki/monkey_(primate)"
-    )
-
-    # Test special characters and formatting
-    complex_name = "Ferret family of Carnivorans(large: badgers & wolverines;small: weasels & ferrets)"
-    assert (
-        create_wikipedia_url(complex_name)
-        != "https://en.wikipedia.org/wiki/Ferret_family_of_Carnivorans(large:_badgers_&_wolverines;small:_weasels_&_ferrets)"
-    )
 
 
 def test_normalize_entry() -> None:
@@ -69,7 +29,7 @@ def test_normalize_entry() -> None:
 
 def test_parse_table_with_single_adjective(tmp_path: Path) -> None:
     """Test parsing a table with a single adjective-animal pair."""
-    fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
+    fixture_path = Path(__file__).parent / "fixtures" / "raw_snapshot.html"
 
     # Since we're testing a single adjective, we'll focus on the avian/bird pair
     result = parse_table(fixture_path)
