@@ -6,6 +6,15 @@ A Python application that scrapes Wikipedia's "List of animal names" page, extra
 
 ## Implementation Progress
 
+### Day 4: Testing and Coverage ✅
+- Achieved ≥90% code coverage across all source modules
+- Added comprehensive unit tests for edge cases in scraper, downloader, and renderer
+- Created integration tests for combinations of modules
+- Set up CI workflow with coverage enforcement
+- Created test fixtures and helper functions for reliable testing
+- Added markers for online, slow, and integration tests
+- Implemented a coverage reporting system
+
 ### Day 3: Renderer Implementation ✅
 - Implemented HTML report generation using Jinja2 templates
 - Created responsive design with mobile-first approach using CSS Grid/Flexbox
@@ -211,6 +220,17 @@ poetry shell
 # Run tests
 poetry run pytest
 
+# Run tests with coverage
+poetry run pytest --cov=src --cov-report=term
+
+# Run specific test categories
+poetry run pytest -m "not online"  # Skip tests that require internet
+poetry run pytest -m "not slow"    # Skip slow tests
+poetry run pytest -m integration   # Run only integration tests
+
+# Run the coverage script (creates reports)
+./run_coverage.sh
+
 # Run linting and type checking
 poetry run flake8 src tests
 poetry run mypy src tests
@@ -317,6 +337,28 @@ This project follows these quality standards:
 - **Type annotations** for all functions and classes
 - **Google-style docstrings** for all public APIs
 - **Comprehensive test coverage** (>90%)
+
+## CI Integration & Code Coverage
+
+This project uses GitHub Actions for continuous integration, with a focus on code quality and testing:
+
+- **Automatic testing**: All tests are run on each push to main or PR
+- **Coverage enforcement**: Build fails if coverage falls below 90%
+- **Code quality checks**: Flake8 linting and Black formatting verification
+- **Reports generation**: Test results and coverage reports are generated and uploaded as artifacts
+
+To run the CI checks locally:
+
+```bash
+# Run the full CI suite locally
+./run_coverage.sh
+
+# Check code formatting
+python -m black --check src tests
+
+# Run linting
+python -m flake8 src tests
+```
 
 ## Branching Strategy
 
