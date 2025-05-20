@@ -17,9 +17,9 @@ from src.renderer import (
 )
 from src.scraper import fetch_html, parse_table
 
-# Set up logging
+# Set up logging (default to ERROR level to hide INFO logs)
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.ERROR, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--image-dir",
         type=Path,
-        default=Path("./data/images"),
-        help="Directory to save images (default: ./data/images)",
+        default=Path("/tmp"),
+        help="Directory to save images (default: /tmp)",
     )
     parser.add_argument(
         "--manifest",
@@ -94,7 +94,54 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip downloading images and use existing manifest",
     )
+    parser.add_argument(
+        "--no-console-output",
+        action="store_true",
+        help="Disable printing adjective-animal mappings to console",
+    )
+    parser.add_argument(
+        "--show-logs",
+        action="store_true",
+        help="Show detailed log messages (default: only show adjective-animal mappings)",
+    )
     return parser.parse_args()
+
+
+def print_adjective_animals(adjective_animals, manifest):
+    """
+    Print collateral adjectives and their associated animals to the console.
+
+    Include local links to the downloaded images.
+
+    Args:
+        adjective_animals: Dict mapping adjectives to lists of Animal objects or dicts
+        manifest: Manifest object with image paths
+    """
+    print("\nCOLLATERAL ADJECTIVES AND THEIR ANIMALS:\n")
+    print("-" * 60)
+
+    # If we have a manifest, use it to display image paths
+    image_paths = manifest.entries if manifest else {}
+
+    for adjective, animals in sorted(adjective_animals.items()):
+        print(f"\n{adjective.upper()}:")
+        for animal in animals:
+            # Handle both Animal objects and dictionaries
+            if isinstance(animal, dict):
+                animal_name = animal.get("name")
+                animal_image_path = animal.get("image_path")
+            else:  # Assume it's an Animal object
+                animal_name = animal.name
+                animal_image_path = animal.image_path
+
+            image_path = animal_image_path or image_paths.get(
+                animal_name, "No image available"
+            )
+            print(f" - {animal_name} [Image: {image_path}]")
+
+    print("\n" + "-" * 60)
+    print(f"Total: {len(adjective_animals)} adjectives")
+    print("-" * 60 + "\n")
 
 
 def main() -> int:
@@ -102,10 +149,15 @@ def main() -> int:
     start_time = time.time()
     args = parse_args()
 
-    # Configure logging based on verbosity
+    # Configure logging based on parameters
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+    elif args.show_logs:
+        logging.getLogger().setLevel(logging.INFO)
     elif args.quiet:
+        logging.getLogger().setLevel(logging.ERROR)
+    else:
+        # Default is to hide logs (only show ERROR logs)
         logging.getLogger().setLevel(logging.ERROR)
 
     # Ensure output directories exist
@@ -147,6 +199,10 @@ def main() -> int:
         if args.manifest.exists():
             with open(args.manifest, "r", encoding="utf-8") as f:
                 manifest_data = json.load(f)
+            # Create a Manifest object from the loaded data
+            from src.downloader import Manifest
+
+            manifest = Manifest(entries=manifest_data)
             logger.info(f"Loaded existing manifest from {args.manifest}")
         else:
             logger.warning("No existing manifest found, cannot skip download")
@@ -161,6 +217,10 @@ def main() -> int:
 
     # Load and transform manifest data for the template
     adjective_to_animals = load_manifest(args.manifest)
+
+    # Print adjective-animal mappings to console with local links (unless disabled)
+    if not args.no_console_output:
+        print_adjective_animals(adjective_animals, manifest)
 
     # Generate the report
     generate_report(adjective_to_animals, template, args.output)

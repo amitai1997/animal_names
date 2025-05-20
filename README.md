@@ -42,7 +42,8 @@ A Python application that scrapes Wikipedia's "List of animal names" page, extra
 This project walks from concept to delivery in a structured approach:
 1. Scrape the Wikipedia page to extract animal-adjective mappings
 2. Download images for each animal concurrently
-3. Render an HTML report showing adjectives with their associated animals and images
+3. Display collateral adjectives and their animals with image links in the console
+4. Render an HTML report showing adjectives with their associated animals and images
 4. Validate with automated tests
 
 ## Architecture
@@ -211,6 +212,10 @@ python -m src.cli --output report.html \
 python -m src.cli --output report.html \
   --workers=16 \
   --retries=5
+
+# Control console output
+python -m src.cli --output report.html --no-console-output  # Hide adjective-animal console output
+python -m src.cli --output report.html --show-logs  # Show detailed logs
 
 # Enable verbose logging
 python -m src.cli --output report.html --verbose

@@ -35,7 +35,7 @@ def test_parse_table_with_single_adjective(tmp_path: Path) -> None:
     result = parse_table(fixture_path)
 
     assert "avian" in result
-    assert len(result["avian"]) == 1
+    assert len(result["avian"]) == 2  # There are two entries in the snapshot
     assert result["avian"][0].name == "bird"
 
 
