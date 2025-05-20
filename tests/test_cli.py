@@ -57,6 +57,37 @@ def test_parse_args_skip_download(args, expected, monkeypatch):
     assert parsed_args.skip_download == expected
 
 
+@pytest.mark.parametrize(
+    "args,expected",
+    [
+        (["--output", "report.html"], False),  # Default no_console_output
+        (["--output", "report.html", "--no-console-output"], True),
+    ],
+)
+def test_parse_args_no_console_output(args, expected, monkeypatch):
+    """Test that parse_args correctly parses the no_console_output argument."""
+    monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
+    parsed_args = parse_args()
+    assert parsed_args.no_console_output == expected
+
+
+@pytest.mark.parametrize(
+    "args,expected",
+    [
+        (["--output", "report.html"], Path("/tmp")),  # Default image_dir
+        (
+            ["--output", "report.html", "--image-dir", "/custom/path"],
+            Path("/custom/path"),
+        ),
+    ],
+)
+def test_parse_args_image_dir(args, expected, monkeypatch):
+    """Test that parse_args correctly parses the image_dir argument."""
+    monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
+    parsed_args = parse_args()
+    assert parsed_args.image_dir == expected
+
+
 def test_parse_args_help(monkeypatch, capsys):
     """Test that parse_args shows help and exits when called with --help."""
     monkeypatch.setattr(sys, "argv", ["cli.py", "--help"])
@@ -372,3 +403,43 @@ def test_end_to_end_integration(temp_dir, monkeypatch):
         assert any(term in html_content for term in ["feline", "cat"])
         # Check for CSS link
         assert "<link" in html_content and "css" in html_content
+
+
+def test_print_adjective_animals(capsys):
+    """Test that print_adjective_animals correctly prints adjectives and animals to the console."""
+    from src.cli import print_adjective_animals
+    from src.downloader import Manifest
+    from src.scraper import Animal
+
+    # Create sample data
+    adjective_animals = {
+        "feline": [
+            Animal(
+                name="cat",
+                page_url="https://example.com/cat",
+                image_path="/tmp/cat.jpg",
+            )
+        ],
+        "canine": [
+            Animal(
+                name="dog",
+                page_url="https://example.com/dog",
+                image_path="/tmp/dog.jpg",
+            )
+        ],
+    }
+    manifest = Manifest(entries={"cat": "/tmp/cat.jpg", "dog": "/tmp/dog.jpg"})
+
+    # Call the function
+    print_adjective_animals(adjective_animals, manifest)
+
+    # Capture the stdout
+    captured = capsys.readouterr()
+
+    # Check if adjectives and animals are printed correctly
+    assert "FELINE" in captured.out
+    assert "CANINE" in captured.out
+    assert "cat" in captured.out
+    assert "dog" in captured.out
+    assert "/tmp/cat.jpg" in captured.out
+    assert "/tmp/dog.jpg" in captured.out
