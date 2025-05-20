@@ -292,7 +292,18 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     )
 
                 # Extract and normalize animal name, handling footnotes in <small> tags
+                page_url = None
                 if isinstance(animal_cell, Tag):
+                    # Extract the href from the first <a> tag if present
+                    link = animal_cell.find('a')
+                    if link and 'href' in link.attrs:
+                        # Convert relative URL to absolute URL
+                        href = link['href']
+                        if href.startswith('/wiki/'):
+                            page_url = f"https://en.wikipedia.org{href}"
+                            logger.debug(f"Found direct link in cell: {page_url}")
+                    
+                    # Remove <small> tags
                     for small in animal_cell.find_all("small"):
                         # Remove the <small> tag and its contents
                         small.decompose()
@@ -326,8 +337,11 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if adj_lower not in result:
                         result[adj_lower] = []
                     
-                    # Create page URL using our improved function
-                    page_url = create_wikipedia_url(animal_name)
+                    # Use the directly extracted URL if available, otherwise fall back to our function
+                    if page_url is None:
+                        page_url = create_wikipedia_url(animal_name)
+                        logger.debug(f"Using generated URL for {animal_name}: {page_url}")
+                    
                     animal_obj = Animal(name=animal_name, page_url=page_url)
                     
                     # Check if this animal already exists in the list
