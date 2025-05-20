@@ -74,6 +74,20 @@ def test_parse_args_no_console_output(args, expected, monkeypatch):
 @pytest.mark.parametrize(
     "args,expected",
     [
+        (["--output", "report.html"], False),  # Default show_logs
+        (["--output", "report.html", "--show-logs"], True),
+    ],
+)
+def test_parse_args_show_logs(args, expected, monkeypatch):
+    """Test that parse_args correctly parses the show_logs argument."""
+    monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
+    parsed_args = parse_args()
+    assert parsed_args.show_logs == expected
+
+
+@pytest.mark.parametrize(
+    "args,expected",
+    [
         (["--output", "report.html"], Path("/tmp")),  # Default image_dir
         (
             ["--output", "report.html", "--image-dir", "/custom/path"],
@@ -252,14 +266,15 @@ def test_main_skip_download_no_manifest(temp_dir, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "verbose,quiet,expected_level",
+    "verbose,quiet,show_logs,expected_level",
     [
-        (True, False, "DEBUG"),
-        (False, True, "ERROR"),
-        (False, False, "INFO"),  # Default
+        (True, False, False, "DEBUG"),  # Verbose overrides all
+        (False, True, False, "ERROR"),  # Quiet overrides show_logs
+        (False, False, True, "INFO"),   # show_logs enables INFO level
+        (False, False, False, "ERROR"), # Default is ERROR level (hide logs)
     ],
 )
-def test_main_logging_level(temp_dir, monkeypatch, verbose, quiet, expected_level):
+def test_main_logging_level(temp_dir, monkeypatch, verbose, quiet, show_logs, expected_level):
     """Test that main sets the correct logging level based on verbosity flags."""
     output_path = temp_dir / "output.html"
 
@@ -268,6 +283,8 @@ def test_main_logging_level(temp_dir, monkeypatch, verbose, quiet, expected_leve
         args.append("--verbose")
     if quiet:
         args.append("--quiet")
+    if show_logs:
+        args.append("--show-logs")
 
     monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
 
