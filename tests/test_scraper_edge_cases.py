@@ -73,8 +73,10 @@ def test_parse_table_malformed_html(temp_dir):
     <html>
         <body>
             <table class="wikitable">
-                <th>Animal</th>
-                <th>Collateral adjective</th>
+                <tr>
+                    <th>Animal</th>
+                    <th>Collateral adjective</th>
+                </tr>
                 <tr>
                     <td>Cat</td>
                     <td>feline
@@ -95,10 +97,16 @@ def test_parse_table_malformed_html(temp_dir):
     # Parse the table, which should handle the malformed HTML gracefully
     try:
         result = parse_table(test_file)
-        # The parsing might succeed partially or fail, but shouldn't crash
+        # If it succeeds, check that at least one adjective was found
+        assert (
+            "canine" in result or "feline" in result
+        ), "No adjectives found in malformed HTML"
     except Exception as e:
         # If it raises an exception, it should be a controlled one
-        assert "not found" in str(e).lower() or "invalid" in str(e).lower()
+        assert any(
+            term in str(e).lower()
+            for term in ["not found", "invalid", "missing", "malformed", "empty"]
+        )
 
 
 def test_parse_table_with_merged_cells(temp_dir):

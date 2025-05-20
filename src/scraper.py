@@ -179,106 +179,95 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
 
     # Find the "Collateral adjective" table by header text
     target_table = None
-    animal_col_name = ""
+    animal_col_idx = -1
+    adjective_col_idx = -1
+    column_headers = []
 
-    # First check tables with the specific wikitable class (production case)
+    # First scan through all tables with the wikitable class
     for table in soup.find_all("table", class_=["wikitable", "sortable"]):
         if isinstance(table, Tag):
-            headers = table.find_all("th")
-            for header in headers:
-                if "Collateral adjective" in header.get_text():
-                    target_table = table
+            # Get all header rows in the table
+            header_rows = table.find_all("tr", limit=1)
+            if not header_rows:
+                continue
 
-                    # Find the column that likely contains animal names
-                    possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
-                    header_texts = [th.get_text(strip=True) for th in headers]
+            header_row = header_rows[0]
+            header_cells = header_row.find_all("th")
 
-                    for col in possible_animal_cols:
-                        if col in header_texts:
-                            animal_col_name = col
-                            logger.info(
-                                f"Found table with '{col}' and 'Collateral adjective' columns"
-                            )
-                            break
+            # Extract all column header texts
+            header_texts = []
+            for idx, cell in enumerate(header_cells):
+                text = cell.get_text(strip=True)
+                header_texts.append(text)
+                # Look for the Collateral adjective column
+                if "Collateral adjective" in text:
+                    adjective_col_idx = idx
+                # Look for potential animal column headers
+                if text in ["Animal", "Trivial name", "Scientific term"]:
+                    animal_col_idx = idx
 
-                    if animal_col_name:  # Found a valid animal column
-                        break
-                    else:
-                        # Keep looking for a better table with an animal column
-                        target_table = None
-        if target_table and animal_col_name:
-            break
+            # If we found both required columns, we can use this table
+            if adjective_col_idx >= 0 and animal_col_idx >= 0:
+                target_table = table
+                column_headers = header_texts
+                logger.info(f"Found table with columns: {column_headers}")
+                logger.info(
+                    f"Using '{column_headers[animal_col_idx]}' (index {animal_col_idx}) "
+                    f"and '{column_headers[adjective_col_idx]}' (index {adjective_col_idx})"
+                )
+                break
 
-    # If we couldn't find a table with the specific class, check all tables (test case)
+    # If we couldn't find with specific classes, try any table (helpful for tests)
     if not target_table:
         for table in soup.find_all("table"):
             if isinstance(table, Tag):
-                headers = table.find_all("th")
-                for header in headers:
-                    if "Collateral adjective" in header.get_text():
-                        target_table = table
+                # Get header row
+                header_rows = table.find_all("tr", limit=1)
+                if not header_rows:
+                    continue
 
-                        # Find the column that likely contains animal names
-                        possible_animal_cols = [
-                            "Animal",
-                            "Trivial name",
-                            "Scientific term",
-                        ]
-                        header_texts = [th.get_text(strip=True) for th in headers]
+                header_row = header_rows[0]
+                header_cells = header_row.find_all("th")
 
-                        for col in possible_animal_cols:
-                            if col in header_texts:
-                                animal_col_name = col
-                                logger.info(
-                                    f"Found table with '{col}' and 'Collateral adjective' columns"
-                                )
-                                break
+                # Extract all column header texts
+                header_texts = []
+                for idx, cell in enumerate(header_cells):
+                    text = cell.get_text(strip=True)
+                    header_texts.append(text)
+                    # Look for the Collateral adjective column
+                    if "Collateral adjective" in text:
+                        adjective_col_idx = idx
+                    # Look for potential animal column headers
+                    if text in ["Animal", "Trivial name", "Scientific term"]:
+                        animal_col_idx = idx
 
-                        # If we don't find a recognized column but Animal is the first column,
-                        # assume it's our test table
-                        if (
-                            not animal_col_name
-                            and len(header_texts) > 0
-                            and header_texts[0] == "Animal"
-                        ):
-                            animal_col_name = "Animal"
-                            logger.info(f"Using '{animal_col_name}' from test fixture")
-                            break
+                # For test fixtures - use first column as animal if not found
+                if (
+                    adjective_col_idx >= 0
+                    and animal_col_idx < 0
+                    and len(header_texts) > 0
+                ):
+                    if header_texts[0] == "Animal":
+                        animal_col_idx = 0
 
-                        if animal_col_name:  # Found a valid animal column
-                            break
-                        else:
-                            # Keep looking for a better table with an animal column
-                            target_table = None
-            if target_table and animal_col_name:
-                break
+                # If we found both required columns, we can use this table
+                if adjective_col_idx >= 0 and animal_col_idx >= 0:
+                    target_table = table
+                    column_headers = header_texts
+                    logger.info(f"Found table with columns: {column_headers}")
+                    logger.info(
+                        f"Using '{column_headers[animal_col_idx]}' (index {animal_col_idx}) "
+                        f"and '{column_headers[adjective_col_idx]}' (index {adjective_col_idx})"
+                    )
+                    break
 
     if not target_table:
         error_msg = "Could not find table with 'Collateral adjective' header"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    # Identify column indices for animal column and "Collateral adjective"
-    header_row = target_table.find("tr")
-    if not isinstance(header_row, Tag):
-        error_msg = "Header row is not a Tag"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-
-    headers_elements = header_row.find_all("th")
-    header_texts: List[str] = [th.get_text(strip=True) for th in headers_elements]
-
-    try:
-        animal_idx = header_texts.index(animal_col_name)
-        adjective_idx = header_texts.index("Collateral adjective")
-        logger.info(
-            f"Using '{animal_col_name}' column (index {animal_idx}) and 'Collateral adjective' column (index {adjective_idx})"
-        )
-    except ValueError:
-        error_msg = (
-            f"Required columns '{animal_col_name}' or 'Collateral adjective' "
-            "not found in table"
-        )
+    if animal_col_idx < 0 or adjective_col_idx < 0:
+        error_msg = "Could not identify animal or adjective columns in the table"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
@@ -293,12 +282,12 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                 cells = row.find_all(["td", "th"])
 
                 # Skip rows with insufficient cells
-                if len(cells) <= max(animal_idx, adjective_idx):
+                if len(cells) <= max(animal_col_idx, adjective_col_idx):
                     logger.warning(f"Skipping row with insufficient cells: {row}")
                     continue
 
-                animal_cell = cells[animal_idx]
-                adjective_cell = cells[adjective_idx]
+                animal_cell = cells[animal_col_idx]
+                adjective_cell = cells[adjective_col_idx]
 
                 # Handle rowspan/colspan
                 if isinstance(animal_cell, Tag) and (
@@ -355,12 +344,14 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if adj_lower not in result:
                         result[adj_lower] = []
 
-                    # Use the directly extracted URL if available, otherwise fall back to our function
+                    # Always prioritize the URL directly from the Wikipedia page
+                    # Only fall back to generating a URL if absolutely necessary
                     if page_url is None:
-                        page_url = create_wikipedia_url(animal_name)
-                        logger.debug(
-                            f"Using generated URL for {animal_name}: {page_url}"
+                        # Log warning when falling back to generated URL
+                        logger.warning(
+                            f"No direct link found for animal '{animal_name}', falling back to generated URL"
                         )
+                        page_url = create_wikipedia_url(animal_name)
 
                     animal_obj = Animal(name=animal_name, page_url=page_url)
 
