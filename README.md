@@ -2,7 +2,16 @@
 
 A Python application that scrapes Wikipedia's "List of animal names" page, extracts collateral adjectives and their associated animals, downloads images, and generates an HTML report.
 
-> **Note**: This is a test edit to verify the text-editor tool is working properly.
+> **Note**: The mcp-server-text-editor is now properly configured and working!
+
+## Implementation Progress
+
+### Day 1: Scraper Implementation ✅
+- Implemented `fetch_html` function to download the Wikipedia page
+- Created `normalize_entry` to strip HTML tags and normalize text
+- Developed `parse_table` to extract adjective→animal mappings
+- Wrote comprehensive tests for all edge cases including empty tables
+- Established project scaffolding and test infrastructure
 
 ## Project Overview
 
@@ -11,6 +20,28 @@ This project walks from concept to delivery in a structured approach:
 2. Download images for each animal concurrently
 3. Render an HTML report showing adjectives with their associated animals and images
 4. Validate with automated tests
+
+## Architecture
+
+The project is organized into several core components:
+- `src/scraper.py`: HTML fetching and parsing
+- `src/downloader.py`: Threaded image downloads (coming in Day 2)
+- `src/renderer.py`: HTML/Jinja2 output generation (coming in Day 3)
+- `src/cli.py`: Command-line interface
+
+### Scraper Component (Day 1)
+
+The scraper module provides three main functions:
+
+1. `fetch_html(url: str, dest: Path) -> None`: Downloads the HTML from the specified URL and saves it to the destination path.
+2. `normalize_entry(raw: str) -> str`: Strips HTML tags, normalizes whitespace, and unescapes HTML entities.
+3. `parse_table(html_path: Path) -> Dict[str, List[str]]`: Parses the "Collateral adjective" table from the HTML file and returns a dictionary mapping adjectives to lists of animal names.
+
+The scraper handles various edge cases:
+- Multiple adjectives in a single cell (separated by commas or semicolons)
+- Footnotes in `<small>` tags
+- Merged cells (rowspan/colspan)
+- Empty rows or cells
 
 ## Linting and Code Quality
 
@@ -32,7 +63,7 @@ per-file-ignores =
 
 You can run flake8 manually:
 ```bash
-cd /root/projects/animal_names
+cd ~/Documents/animal_names
 .venv/bin/flake8
 ```
 
@@ -85,14 +116,6 @@ poetry install
 # Run the application
 python -m src.cli --output /path/to/report.html
 ```
-
-## Architecture
-
-The project is organized into several core components:
-- `src/scraper.py`: HTML fetching and parsing
-- `src/downloader.py`: Threaded image downloads
-- `src/renderer.py`: HTML/Jinja2 output generation
-- `src/cli.py`: Command-line interface
 
 ## Development Setup
 
