@@ -166,6 +166,34 @@ poetry install
 python -m src.cli --output /path/to/report.html
 ```
 
+### CLI Options
+
+The command-line interface supports various options:
+
+```bash
+# Basic usage
+python -m src.cli --output report.html
+
+# Skip downloading images and use existing ones
+python -m src.cli --output report.html --skip-download
+
+# Specify custom directories
+python -m src.cli --output report.html \
+  --image-dir=./data/images \
+  --manifest=./data/manifest.json \
+  --html-snapshot=./data/raw_snapshot.html \
+  --static-dir=./static \
+  --template-dir=./templates
+
+# Configure download parameters
+python -m src.cli --output report.html \
+  --workers=16 \
+  --retries=5
+
+# Enable verbose logging
+python -m src.cli --output report.html --verbose
+```
+
 ## Development Setup
 
 ### Using Poetry (Recommended)
