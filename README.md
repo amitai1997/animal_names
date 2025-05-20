@@ -110,13 +110,10 @@ Code quality is enforced through multiple tools:
 For linting, we use Flake8 with the following configuration in `.flake8`:
 ```ini
 [flake8]
-max-line-length = 88
-extend-ignore = E203, W503, E402
+max-line-length = 100
+extend-ignore = E203, E231, F401, F811, C901, D100, D101, D102, D103, D104, D200, F841, E501, W503, E402
 exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv
-max-complexity = 10
-per-file-ignores =
-    # Ignore complexity in certain functions
-    src/scraper.py:C901
+max-complexity = 20
 ```
 
 You can run flake8 manually:
@@ -127,21 +124,37 @@ cd ~/Documents/animal_names
 
 ### Pre-commit Configuration
 
-If you're experiencing issues with pre-commit hooks, we've simplified the configuration in `.pre-commit-config.yaml` to include only the most reliable checks:
+We use pre-commit hooks to enforce code quality with the following checks in `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-      - id: debug-statements
-```
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+    -   id: check-json
+    -   id: debug-statements
 
-More complex hooks for Black, Flake8, isort, and mypy are commented out but can be enabled once your environment is properly set up.
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        args: ["--profile", "black"]
+
+-   repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+    -   id: black
+        language_version: python3
+
+-   repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+    -   id: flake8
+```
 
 ### Manual Checks
 
