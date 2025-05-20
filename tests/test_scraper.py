@@ -2,7 +2,7 @@
 import os
 import sys
 from pathlib import Path
-from src.scraper import normalize_entry, parse_table, create_wikipedia_url
+from src.scraper import normalize_entry, parse_table, create_wikipedia_url, fetch_html, Animal
 import pytest
 
 # Add parent directory to path to make imports work with pytest
@@ -126,3 +126,118 @@ def test_fetch_html(tmp_path: Path) -> None:
 
     # Since we're not running the test, we'll just pass for now
     pass
+
+
+@pytest.mark.online
+def test_live_wikipedia_integration():
+    """Integration test with the actual Wikipedia page."""
+    import tempfile
+    from pathlib import Path
+    
+    # Create a temporary directory and file for the test
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        html_path = temp_path / "live_wiki.html"
+        
+        # Step 1: Fetch the actual Wikipedia page
+        fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", html_path)
+        assert html_path.exists()
+        assert html_path.stat().st_size > 0
+        
+        # Step 2: Parse the table from the live page
+        animal_mappings = parse_table(html_path)
+        
+        # Verify we got some results
+        assert len(animal_mappings) > 0
+        
+        # Check for some expected adjectives
+        common_adjectives = ["avian", "feline", "canine", "equine", "bovine"]
+        found_adjectives = [adj for adj in common_adjectives if adj in animal_mappings]
+        assert len(found_adjectives) > 0, f"Found adjectives: {list(animal_mappings.keys())}"
+        
+        # Verify animal objects have valid URLs
+        for adjective, animals in animal_mappings.items():
+            for animal in animals:
+                assert animal.name, f"Animal without name found in {adjective}"
+                assert animal.page_url, f"Animal without URL found: {animal.name}"
+                assert animal.page_url.startswith("https://"), f"Invalid URL format: {animal.page_url}"
+
+
+@pytest.mark.online
+def test_full_pipeline_with_live_data():
+    """Integration test for the full pipeline with live Wikipedia data."""
+    import tempfile
+    from pathlib import Path
+    from src.downloader import download_images
+    
+    # Create a temporary directory for the test
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        html_path = temp_path / "live_wiki.html"
+        image_dir = temp_path / "images"
+        manifest_path = temp_path / "manifest.json"
+        
+        # Step 1: Fetch the actual Wikipedia page
+        fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", html_path)
+        
+        # Step 2: Parse the table from the live page
+        animal_mappings = parse_table(html_path)
+        
+        # Step 3: Download a small subset of images (limit to 2 adjectives for speed)
+        # Choose first two adjectives from the mappings
+        limited_mappings = {}
+        for i, (adj, animals) in enumerate(animal_mappings.items()):
+            if i < 2:  # Limit to the first two adjectives
+                limited_mappings[adj] = animals
+                
+        # Download images
+        manifest = download_images(
+            limited_mappings,
+            image_dir,
+            workers=2,
+            retries=1
+        )
+        
+        # Save the manifest
+        manifest.to_json(manifest_path)
+        
+        # Verify images were downloaded
+        assert len(manifest.entries) > 0
+        for animal_name, image_path in manifest.entries.items():
+            assert Path(image_path).exists(), f"Image not found for {animal_name}: {image_path}"
+            assert Path(image_path).stat().st_size > 0, f"Empty image for {animal_name}: {image_path}"
+
+
+@pytest.mark.online
+def test_live_wikipedia_integration():
+    """Integration test with the actual Wikipedia page."""
+    import tempfile
+    from pathlib import Path
+    
+    # Create a temporary directory and file for the test
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        html_path = temp_path / "live_wiki.html"
+        
+        # Step 1: Fetch the actual Wikipedia page
+        fetch_html("https://en.wikipedia.org/wiki/List_of_animal_names", html_path)
+        assert html_path.exists()
+        assert html_path.stat().st_size > 0
+        
+        # Step 2: Parse the table from the live page
+        animal_mappings = parse_table(html_path)
+        
+        # Verify we got some results
+        assert len(animal_mappings) > 0
+        
+        # Check for some expected adjectives
+        common_adjectives = ["avian", "feline", "canine", "equine", "bovine"]
+        found_adjectives = [adj for adj in common_adjectives if adj in animal_mappings]
+        assert len(found_adjectives) > 0, f"Found adjectives: {list(animal_mappings.keys())}"
+        
+        # Verify animal objects have valid URLs
+        for adjective, animals in animal_mappings.items():
+            for animal in animals:
+                assert animal.name, f"Animal without name found in {adjective}"
+                assert animal.page_url, f"Animal without URL found: {animal.name}"
+                assert animal.page_url.startswith("https://"), f"Invalid URL format: {animal.page_url}"
