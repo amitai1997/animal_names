@@ -128,6 +128,11 @@ def extract_image_url(page_url: str) -> Optional[str]:
                 # Ensure URL is absolute
                 if img_url.startswith("//"):
                     img_url = "https:" + img_url
+                elif img_url.startswith("/"):
+                    # Handle root-relative URLs
+                    parsed_url = requests.utils.urlparse(page_url)
+                    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                    img_url = base_url + img_url
                 logger.debug(f"Found image URL in infobox: {img_url}")
                 return img_url
 
@@ -138,6 +143,11 @@ def extract_image_url(page_url: str) -> Optional[str]:
             # Ensure URL is absolute
             if img_url.startswith("//"):
                 img_url = "https:" + img_url
+            elif img_url.startswith("/"):
+                # Handle root-relative URLs
+                parsed_url = requests.utils.urlparse(page_url)
+                base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                img_url = base_url + img_url
             logger.debug(f"Found first image URL in article: {img_url}")
             return img_url
 
