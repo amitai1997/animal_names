@@ -2,9 +2,10 @@
 name = "animal_names"
 version = "0.1.0"
 description = "A Python application that scrapes Wikipedia's List of animal names, extracts adjective-animal mappings, downloads images, and generates an HTML report."
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Your Name <amitai1997@gmail.com>"]
 readme = "README.md"
 packages = [{include = "src"}]
+include = ["README.md"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -19,6 +20,7 @@ black = "^22.6.0"
 flake8 = "^5.0.4"
 mypy = "^0.982"
 pre-commit = "^2.20.0"
+# Add any missing dev dependencies
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,0 +1,32 @@
+# Exclude Python cache and virtualenvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+.venv/
+venv/
+
+# Exclude data and output files
+*.db
+*.sqlite3
+*.log
+*.html
+*.csv
+*.tsv
+*.tmp
+*.bak
+
+# Exclude test output
+.coverage
+htmlcov/
+
+# Exclude local config
+.env
+
+# Exclude OS files
+.DS_Store
+
+# Exclude report and images generated at runtime
+report.html
+data/images/
