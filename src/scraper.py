@@ -64,6 +64,57 @@ def fetch_html(url: str, dest: Path) -> None:
         raise
 
 
+def create_wikipedia_url(name: str) -> str:
+    """
+    Create a valid Wikipedia URL from an animal name.
+    
+    Args:
+        name: The raw animal name that might contain invalid URL characters.
+        
+    Returns:
+        A properly formatted Wikipedia URL for the animal.
+    """
+    # Take only the first animal if multiple are listed (separated by commas or semicolons)
+    if ',' in name:
+        name = name.split(',')[0]
+    if ';' in name:
+        name = name.split(';')[0]
+    
+    # Remove footnote references like [5] and anything in parentheses
+    name = re.sub(r'\[\d+\]', '', name)  # Remove [5], [3], etc.
+    name = re.sub(r'\([^)]*\)', '', name)  # Remove anything in parentheses
+    
+    # Clean and normalize the name
+    name = name.strip()
+    
+    # Special cases for common animals that might have redirects
+    name_lower = name.lower()
+    if "dog" in name_lower:
+        return "https://en.wikipedia.org/wiki/Dog"
+    elif "cat" in name_lower:
+        return "https://en.wikipedia.org/wiki/Cat"
+    elif "bird" in name_lower:
+        return "https://en.wikipedia.org/wiki/Bird"
+    elif "fish" in name_lower:
+        return "https://en.wikipedia.org/wiki/Fish"
+    elif "horse" in name_lower:
+        return "https://en.wikipedia.org/wiki/Horse"
+    elif "whale" in name_lower:
+        return "https://en.wikipedia.org/wiki/Whale"
+    elif "dolphin" in name_lower:
+        return "https://en.wikipedia.org/wiki/Dolphin"
+    elif "rabbit" in name_lower or "hare" in name_lower:
+        return "https://en.wikipedia.org/wiki/Rabbit"
+    
+    # Replace spaces with underscores for URL format
+    url_name = name.replace(' ', '_')
+    
+    # Remove any remaining problematic characters
+    url_name = re.sub(r'[^\w\-_]', '', url_name)
+    
+    return f"https://en.wikipedia.org/wiki/{url_name}"
+
+
 def normalize_entry(raw: str) -> str:
     """
     Strip HTML tags, normalize whitespace, and unescape HTML entities.
@@ -275,8 +326,8 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if adj_lower not in result:
                         result[adj_lower] = []
                     
-                    # Create page URL based on animal name
-                    page_url = f"https://en.wikipedia.org/wiki/{animal_name.replace(' ', '_')}"
+                    # Create page URL using our improved function
+                    page_url = create_wikipedia_url(animal_name)
                     animal_obj = Animal(name=animal_name, page_url=page_url)
                     
                     # Check if this animal already exists in the list

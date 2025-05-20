@@ -2,11 +2,30 @@
 import os
 import sys
 from pathlib import Path
-from src.scraper import normalize_entry, parse_table
+from src.scraper import normalize_entry, parse_table, create_wikipedia_url
 import pytest
 
 # Add parent directory to path to make imports work with pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+def test_create_wikipedia_url():
+    """Test creating valid Wikipedia URLs from animal names."""
+    # Test basic name handling
+    assert create_wikipedia_url("cat") == "https://en.wikipedia.org/wiki/Cat"
+    assert create_wikipedia_url("Dog") == "https://en.wikipedia.org/wiki/Dog"
+    
+    # Test complex names with multiple animals
+    assert create_wikipedia_url("whale, dolphin, porpoise") == "https://en.wikipedia.org/wiki/Whale"
+    assert create_wikipedia_url("rabbits & hares") == "https://en.wikipedia.org/wiki/Rabbit"
+    
+    # Test names with footnotes or parentheses
+    assert create_wikipedia_url("cattle; ox,[5] cow") != "https://en.wikipedia.org/wiki/cattle;_ox,[5]_cow"
+    assert create_wikipedia_url("monkey (primate)") != "https://en.wikipedia.org/wiki/monkey_(primate)"
+    
+    # Test special characters and formatting
+    complex_name = "Ferret family of Carnivorans(large: badgers & wolverines;small: weasels & ferrets)"
+    assert create_wikipedia_url(complex_name) != "https://en.wikipedia.org/wiki/Ferret_family_of_Carnivorans(large:_badgers_&_wolverines;small:_weasels_&_ferrets)"
 
 
 def test_normalize_entry() -> None:
