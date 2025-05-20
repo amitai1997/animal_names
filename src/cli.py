@@ -17,9 +17,9 @@ from src.renderer import (
 )
 from src.scraper import fetch_html, parse_table
 
-# Set up logging
+# Set up logging (default to ERROR level to hide INFO logs)
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.ERROR, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -99,6 +99,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable printing adjective-animal mappings to console",
     )
+    parser.add_argument(
+        "--show-logs",
+        action="store_true",
+        help="Show detailed log messages (default: only show adjective-animal mappings)",
+    )
     return parser.parse_args()
 
 
@@ -129,7 +134,9 @@ def print_adjective_animals(adjective_animals, manifest):
                 animal_name = animal.name
                 animal_image_path = animal.image_path
 
-            image_path = animal_image_path or image_paths.get(animal_name, "No image available")
+            image_path = animal_image_path or image_paths.get(
+                animal_name, "No image available"
+            )
             print(f"  - {animal_name} [Image: {image_path}]")
 
     print("\n" + "-" * 60)
@@ -142,10 +149,15 @@ def main() -> int:
     start_time = time.time()
     args = parse_args()
 
-    # Configure logging based on verbosity
+    # Configure logging based on parameters
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+    elif args.show_logs:
+        logging.getLogger().setLevel(logging.INFO)
     elif args.quiet:
+        logging.getLogger().setLevel(logging.ERROR)
+    else:
+        # Default is to hide logs (only show ERROR logs)
         logging.getLogger().setLevel(logging.ERROR)
 
     # Ensure output directories exist
