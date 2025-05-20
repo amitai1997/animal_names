@@ -214,3 +214,61 @@ def test_copy_static_assets(temp_output_dir):
     finally:
         # Clean up the temporary static directory
         shutil.rmtree(static_dir)
+
+
+def test_copy_static_assets_nonexistent_source(temp_output_dir):
+    """Test copying static assets when the source directory doesn't exist."""
+    # Create a nonexistent path
+    nonexistent_dir = Path("/nonexistent/directory")
+    
+    # This should not raise an exception, but log a warning
+    copy_static_assets(nonexistent_dir, temp_output_dir)
+    
+    # The static directory should not be created in the output directory
+    static_output_dir = temp_output_dir / "static"
+    assert not static_output_dir.exists()
+
+
+def test_copy_static_assets_existing_destination(temp_output_dir):
+    """Test copying static assets when the destination already exists."""
+    # Create a temporary directory for static assets
+    static_dir = Path(tempfile.mkdtemp())
+    try:
+        # Create a CSS directory and file
+        css_dir = static_dir / "css"
+        css_dir.mkdir()
+        css_file = css_dir / "style.css"
+        with open(css_file, "w") as f:
+            f.write("body { color: red; }")
+        
+        # Create an existing static directory in the output directory
+        dest_static = temp_output_dir / "static"
+        dest_static.mkdir()
+        
+        # Create a file in the existing static directory
+        with open(dest_static / "old.txt", "w") as f:
+            f.write("This file should be removed")
+        
+        # Copy the static assets
+        copy_static_assets(static_dir, temp_output_dir)
+        
+        # Check that the static directory exists in the output directory
+        assert dest_static.exists()
+        
+        # Check that the old file was removed
+        assert not (dest_static / "old.txt").exists()
+        
+        # Check that the CSS directory and file exist in the static directory
+        css_output_dir = dest_static / "css"
+        assert css_output_dir.exists()
+        css_output_file = css_output_dir / "style.css"
+        assert css_output_file.exists()
+        
+        # Check that the CSS file has the correct content
+        with open(css_output_file, "r") as f:
+            content = f.read()
+        assert content == "body { color: red; }"
+    
+    finally:
+        # Clean up the temporary static directory
+        shutil.rmtree(static_dir)
