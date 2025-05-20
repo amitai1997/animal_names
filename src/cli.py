@@ -1,15 +1,23 @@
 #!/usr/bin/env python
 """Command-line interface for the animal_names project."""
 import argparse
+import json
 import logging
 import sys
+import time
 from pathlib import Path
+
+from src.downloader import download_images
+from src.scraper import fetch_html, parse_table
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Constants
+WIKIPEDIA_URL = "https://en.wikipedia.org/wiki/List_of_animal_names"
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,6 +33,18 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("./data/images"),
         help="Directory to save images (default: ./data/images)",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=Path("./data/manifest.json"),
+        help="Path to save the image manifest (default: ./data/manifest.json)",
+    )
+    parser.add_argument(
+        "--html-snapshot",
+        type=Path,
+        default=Path("./data/raw_snapshot.html"),
+        help="Path to save the raw HTML snapshot (default: ./data/raw_snapshot.html)",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
@@ -44,11 +64,17 @@ def parse_args() -> argparse.Namespace:
         default=3,
         help="Number of retry attempts for downloading images (default: 3)",
     )
+    parser.add_argument(
+        "--skip-download",
+        action="store_true",
+        help="Skip downloading images and use existing manifest",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     """Execute the main CLI program."""
+    start_time = time.time()
     args = parse_args()
 
     # Configure logging based on verbosity
@@ -60,13 +86,51 @@ def main() -> int:
     # Ensure output directories exist
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.image_dir.mkdir(parents=True, exist_ok=True)
+    args.manifest.parent.mkdir(parents=True, exist_ok=True)
+    args.html_snapshot.parent.mkdir(parents=True, exist_ok=True)
 
     logger.info("Starting animal names scraper")
 
-    # TODO: Implement the actual scraping, downloading, and rendering pipeline
-    # This will be filled in during Day 1, 2, and 3 implementations
+    # Step 1: Fetch and parse the Wikipedia page
+    if not args.html_snapshot.exists():
+        logger.info(f"Fetching HTML from {WIKIPEDIA_URL}")
+        fetch_html(WIKIPEDIA_URL, args.html_snapshot)
+    else:
+        logger.info(f"Using existing HTML snapshot from {args.html_snapshot}")
 
-    logger.info(f"Report generated at {args.output}")
+    # Step 2: Parse the table to extract adjective → animal mappings
+    logger.info("Parsing collateral adjective table")
+    adjective_animals = parse_table(args.html_snapshot)
+    logger.info(f"Found {len(adjective_animals)} adjective entries")
+
+    # Step 3: Download images for each animal
+    if not args.skip_download:
+        logger.info(f"Downloading animal images to {args.image_dir}")
+        manifest = download_images(
+            adjective_animals,
+            args.image_dir,
+            workers=args.workers,
+            retries=args.retries,
+            placeholder_path=Path(__file__).parent / "assets" / "placeholder.jpg"
+        )
+        # Save the manifest
+        manifest.to_json(args.manifest)
+        logger.info(f"Saved image manifest to {args.manifest}")
+    else:
+        logger.info("Skipping image download as requested")
+        # Load existing manifest if available
+        if args.manifest.exists():
+            with open(args.manifest, "r", encoding="utf-8") as f:
+                manifest_data = json.load(f)
+            logger.info(f"Loaded existing manifest from {args.manifest}")
+        else:
+            logger.warning("No existing manifest found, cannot skip download")
+            return 1
+
+    # TODO: Day 3 will add the HTML rendering step here
+
+    elapsed_time = time.time() - start_time
+    logger.info(f"Processing completed in {elapsed_time:.2f} seconds")
     return 0
 
 

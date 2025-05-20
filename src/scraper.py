@@ -8,11 +8,19 @@ focusing on the collateral adjective table.
 import html
 import logging
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests  # type: ignore
 from bs4 import BeautifulSoup, Tag  # type: ignore
+
+@dataclass
+class Animal:
+    """Class representing an animal with its name and corresponding page URL."""
+    name: str
+    page_url: Optional[str] = None
+    image_path: Optional[str] = None
 
 # Configure logger
 logging.basicConfig(
@@ -90,7 +98,7 @@ def normalize_entry(raw: str) -> str:
     return text
 
 
-def parse_table(html_path: Path) -> Dict[str, List[str]]:
+def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     """
     Parse the "Collateral adjective" table from HTML file.
 
@@ -98,7 +106,7 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         html_path: Path to the HTML file to parse.
 
     Returns:
-        Dictionary mapping collateral adjectives to lists of animal names.
+        Dictionary mapping collateral adjectives to lists of Animal objects.
 
     Raises:
         FileNotFoundError: If the HTML file doesn't exist.
@@ -153,7 +161,7 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         raise ValueError(error_msg)
 
     # Create adjective to animals mapping
-    result: Dict[str, List[str]] = {}
+    result: Dict[str, List[Animal]] = {}
 
     # Process rows in the table body
     if isinstance(target_table, Tag):
@@ -213,8 +221,14 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
                     adj_lower = adjective.lower()
                     if adj_lower not in result:
                         result[adj_lower] = []
-                    if animal_name not in result[adj_lower]:
-                        result[adj_lower].append(animal_name)
+                    
+                    # Create page URL based on animal name
+                    page_url = f"https://en.wikipedia.org/wiki/{animal_name.replace(' ', '_')}"
+                    animal_obj = Animal(name=animal_name, page_url=page_url)
+                    
+                    # Check if this animal already exists in the list
+                    if not any(a.name == animal_name for a in result[adj_lower]):
+                        result[adj_lower].append(animal_obj)
 
     logger.info(f"Extracted {len(result)} adjective-animal mappings")
     return result
