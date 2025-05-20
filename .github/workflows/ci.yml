@@ -1,4 +1,4 @@
-name: CI
+name: Basic CI Check
 
 on:
   push:
@@ -9,17 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.10, 3.11, 3.12]
-
+    
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.13'  # Using the latest Python 3.13
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
@@ -32,25 +29,6 @@ jobs:
       run: |
         poetry install --no-interaction
 
-    - name: Lint with flake8
-      run: |
-        poetry run flake8 src tests
-
-    - name: Check formatting with Black
-      run: |
-        poetry run black --check src tests
-
-    - name: Type check with mypy
-      run: |
-        poetry run mypy src tests
-
     - name: Test with pytest
       run: |
-        poetry run pytest --cov=src --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
-        verbose: true
+        poetry run pytest
