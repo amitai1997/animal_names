@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from src.downloader import download_images
+from src.renderer import setup_jinja_env, load_template, generate_report, copy_static_assets, load_manifest
 from src.scraper import fetch_html, parse_table
 
 # Set up logging
@@ -45,6 +46,24 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("./data/raw_snapshot.html"),
         help="Path to save the raw HTML snapshot (default: ./data/raw_snapshot.html)",
+    )
+    parser.add_argument(
+        "--template-dir",
+        type=Path,
+        default=Path("./templates"),
+        help="Directory containing Jinja2 templates (default: ./templates)",
+    )
+    parser.add_argument(
+        "--template-name",
+        type=str,
+        default="report.html.j2",
+        help="Name of the template file to use (default: report.html.j2)",
+    )
+    parser.add_argument(
+        "--static-dir",
+        type=Path,
+        default=Path("./static"),
+        help="Directory containing static assets (default: ./static)",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
@@ -127,7 +146,23 @@ def main() -> int:
             logger.warning("No existing manifest found, cannot skip download")
             return 1
 
-    # TODO: Day 3 will add the HTML rendering step here
+    # Step 4: Generate HTML report
+    logger.info(f"Generating HTML report at {args.output}")
+    
+    # Setup Jinja2 environment
+    env = setup_jinja_env(args.template_dir)
+    template = load_template(env, args.template_name)
+    
+    # Load and transform manifest data for the template
+    adjective_to_animals = load_manifest(args.manifest)
+    
+    # Generate the report
+    generate_report(adjective_to_animals, template, args.output)
+    
+    # Copy static assets to the output directory
+    copy_static_assets(args.static_dir, args.output.parent)
+    
+    logger.info(f"HTML report generated successfully at {args.output}")
 
     elapsed_time = time.time() - start_time
     logger.info(f"Processing completed in {elapsed_time:.2f} seconds")

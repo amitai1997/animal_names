@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Report</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <h1>Test Adjectives Report</h1>
+    
+    {% for adjective, animals in adjective_to_animals.items() %}
+    <div class="section">
+        <h2>{{ adjective }}</h2>
+        
+        {% if animals %}
+        <ul>
+            {% for animal in animals %}
+            <li>
+                <img src="{{ animal.image_path }}" alt="{{ animal.name }}">
+                <span>{{ animal.name }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No animals found.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</body>
+</html>
