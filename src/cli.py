@@ -8,7 +8,13 @@ import time
 from pathlib import Path
 
 from src.downloader import download_images
-from src.renderer import setup_jinja_env, load_template, generate_report, copy_static_assets, load_manifest
+from src.renderer import (
+    copy_static_assets,
+    generate_report,
+    load_manifest,
+    load_template,
+    setup_jinja_env,
+)
 from src.scraper import fetch_html, parse_table
 
 # Set up logging
@@ -130,7 +136,7 @@ def main() -> int:
             args.image_dir,
             workers=args.workers,
             retries=args.retries,
-            placeholder_path=Path(__file__).parent / "assets" / "placeholder.jpg"
+            placeholder_path=Path(__file__).parent / "assets" / "placeholder.jpg",
         )
         # Save the manifest
         manifest.to_json(args.manifest)
@@ -148,20 +154,20 @@ def main() -> int:
 
     # Step 4: Generate HTML report
     logger.info(f"Generating HTML report at {args.output}")
-    
+
     # Setup Jinja2 environment
     env = setup_jinja_env(args.template_dir)
     template = load_template(env, args.template_name)
-    
+
     # Load and transform manifest data for the template
     adjective_to_animals = load_manifest(args.manifest)
-    
+
     # Generate the report
     generate_report(adjective_to_animals, template, args.output)
-    
+
     # Copy static assets to the output directory
     copy_static_assets(args.static_dir, args.output.parent)
-    
+
     logger.info(f"HTML report generated successfully at {args.output}")
 
     elapsed_time = time.time() - start_time

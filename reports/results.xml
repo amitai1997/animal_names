@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="56" time="5.708" timestamp="2025-05-20T19:32:17.233794" hostname="Amitais-MacBook-Pro.local"><testcase classname="tests.test_cli" name="test_parse_args_output[args0-expected0]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_output[args1-expected1]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_output[args2-expected2]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_output[args3-expected3]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_output[args4-expected4]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_workers[args0-8]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_workers[args1-16]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_workers[args2-4]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_skip_download[args0-False]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_skip_download[args1-True]" time="0.001" /><testcase classname="tests.test_cli" name="test_parse_args_help" time="0.001" /><testcase classname="tests.test_cli" name="test_main_creates_directories" time="0.005" /><testcase classname="tests.test_cli" name="test_main_fetch_html_when_snapshot_not_exists" time="0.002" /><testcase classname="tests.test_cli" name="test_main_skip_download" time="0.002" /><testcase classname="tests.test_cli" name="test_main_skip_download_no_manifest" time="0.001" /><testcase classname="tests.test_cli" name="test_main_logging_level[True-False-DEBUG]" time="0.003" /><testcase classname="tests.test_cli" name="test_main_logging_level[False-True-ERROR]" time="0.003" /><testcase classname="tests.test_cli" name="test_main_logging_level[False-False-INFO]" time="0.002" /><testcase classname="tests.test_cli" name="test_end_to_end_integration" time="0.010"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0/raw_snapshot.html'">temp_dir = PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1059234a0&gt;
+
+    @pytest.mark.integration
+    def test_end_to_end_integration(temp_dir, monkeypatch):
+        """Test an end-to-end integration of the CLI with minimal mocks."""
+        # Create necessary paths
+        output_path = temp_dir / "output.html"
+        image_dir = temp_dir / "images"
+        manifest_path = temp_dir / "manifest.json"
+        html_snapshot_path = temp_dir / "snapshot.html"
+        template_dir = temp_dir / "templates"
+        static_dir = temp_dir / "static"
+
+        # Create template dir and copy template
+        template_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            Path(__file__).parent.parent / "templates",
+            template_dir,
+            dirs_exist_ok=True
+        )
+
+        # Create static dir and copy static files
+        static_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            Path(__file__).parent.parent / "static",
+            static_dir,
+            dirs_exist_ok=True
+        )
+
+        args = [
+            "--output", str(output_path),
+            "--image-dir", str(image_dir),
+            "--manifest", str(manifest_path),
+            "--html-snapshot", str(html_snapshot_path),
+            "--template-dir", str(template_dir),
+            "--static-dir", str(static_dir),
+            "--skip-download",  # Skip download to avoid network requests
+        ]
+
+        monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
+
+        # Mock only the fetch_html and parse_table functions
+        # This keeps most of the real functionality intact
+        animal_data = {"feline": [{"name": "cat", "image_path": "cat.jpg"}]}
+
+        # Create a manifest file
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(animal_data, f)
+
+        with patch("src.cli.fetch_html"), \
+             patch("src.cli.parse_table", return_value=animal_data):
+
+&gt;           result = main()
+
+tests/test_cli.py:297:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/cli.py:157: in main
+    adjective_to_animals = load_manifest(args.manifest)
+src/renderer.py:134: in load_manifest
+    adjective_to_animals_raw = parse_table(html_path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+html_path = PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0/raw_snapshot.html')
+
+    def parse_table(html_path: Path) -&gt; Dict[str, List[Animal]]:
+        """
+        Parse the "Collateral adjective" table from HTML file.
+
+        Args:
+            html_path: Path to the HTML file to parse.
+
+        Returns:
+            Dictionary mapping collateral adjectives to lists of Animal objects.
+
+        Raises:
+            FileNotFoundError: If the HTML file doesn't exist.
+            ValueError: If the table couldn't be found or parsed.
+        """
+        logger.info(f"Parsing table from {html_path}")
+
+        try:
+&gt;           with open(html_path, "r", encoding="utf-8") as f:
+E           FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0/raw_snapshot.html'
+
+src/scraper.py:169: FileNotFoundError</failure></testcase><testcase classname="tests.test_downloader" name="test_slugify" time="0.000" /><testcase classname="tests.test_downloader" name="test_extract_image_url" time="0.002" /><testcase classname="tests.test_downloader" name="test_fetch_with_retries_success" time="0.002" /><testcase classname="tests.test_downloader" name="test_fetch_with_retries_large_file" time="0.001" /><testcase classname="tests.test_downloader" name="test_fetch_with_retries_not_found" time="0.001" /><testcase classname="tests.test_downloader" name="test_fetch_with_retries_server_error" time="0.003" /><testcase classname="tests.test_downloader" name="test_fetch_with_retries_persistent_error" time="0.001" /><testcase classname="tests.test_downloader" name="test_download_images" time="0.003" /><testcase classname="tests.test_downloader" name="test_downloader_integration" time="0.971" /><testcase classname="tests.test_integration" name="test_scraper_to_downloader_integration" time="0.656"><failure message="AssertionError: assert 'avian' in {'bird': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/bird.jpg', 'cattle; ox,[5] cow': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/cattle-ox5-cow.jpg'}">temp_dir = PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0')
+raw_snapshot_path = PosixPath('/Users/amitaisalmon/Documents/animal_names/tests/fixtures/raw_snapshot.html')
+test_http_server = 'http://localhost:54768'
+
+    @pytest.mark.integration
+    def test_scraper_to_downloader_integration(temp_dir, raw_snapshot_path, test_http_server):
+        """Test the integration between scraper and downloader modules."""
+        # Set up paths
+        html_snapshot = temp_dir / "raw_snapshot.html"
+        image_dir = temp_dir / "images"
+        manifest_path = temp_dir / "manifest.json"
+        image_dir.mkdir(exist_ok=True)
+
+        # Copy the raw snapshot
+        shutil.copy(raw_snapshot_path, html_snapshot)
+
+        # Parse the table
+        adjective_animals = parse_table(html_snapshot)
+
+        # Make sure we got some data
+        assert len(adjective_animals) &gt; 0
+
+        # Mock the extract_image_url to use our test server
+        def mock_extract_image_url(page_url):
+            return f"{test_http_server}/success.jpg"
+
+        # Download images for a small subset of animals (for speed)
+        with patch("src.downloader.extract_image_url", side_effect=mock_extract_image_url):
+            # Use just the first 2 adjectives and max 2 animals per adjective
+            limited_animals = {}
+            for i, (adj, animals) in enumerate(adjective_animals.items()):
+                if i &gt;= 2:  # Limit to 2 adjectives
+                    break
+                limited_animals[adj] = animals[:2]  # Limit to 2 animals per adjective
+
+            manifest = download_images(
+                limited_animals,
+                image_dir,
+                workers=4,
+                retries=2,
+                placeholder_path=Path(__file__).parent / "fixtures" / "sample_image.jpg"
+            )
+
+            # Save the manifest
+            manifest.to_json(manifest_path)
+
+        # Check that the manifest file was created
+        assert manifest_path.exists()
+
+        # Check manifest contains our data
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest_data = json.load(f)
+
+        for adj in limited_animals.keys():
+&gt;           assert adj in manifest_data
+E           AssertionError: assert 'avian' in {'bird': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/bird.jpg', 'cattle; ox,[5] cow': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/cattle-ox5-cow.jpg'}
+
+tests/test_integration.py:66: AssertionError</failure></testcase><testcase classname="tests.test_integration" name="test_downloader_to_renderer_integration" time="0.006"><failure message="assert 'adjective_to_animals' in '&lt;!DOCTYPE html&gt;\n&lt;html lang=&quot;en&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=&quot;UTF-8&quot;&gt;\n    &lt;meta name=&quot;viewport&quot; content=&quot;width=devic...ref=&quot;https://en.wikipedia.org/wiki/List_of_animal_names&quot;&gt;List of animal names&lt;/a&gt;&lt;/p&gt;\n    &lt;/footer&gt;\n&lt;/body&gt;\n&lt;/html&gt;'">e2e_test_environment = {'images': PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_downloader_to_renderer_in0/images'), 'reports...ts/coverage'), 'root': PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_downloader_to_renderer_in0'), ...}
+dummy_manifest_path = PosixPath('/Users/amitaisalmon/Documents/animal_names/tests/fixtures/dummy_manifest.json')
+
+    @pytest.mark.integration
+    def test_downloader_to_renderer_integration(e2e_test_environment, dummy_manifest_path):
+        """Test the integration between downloader and renderer modules."""
+        # Set up paths
+        temp_dir = e2e_test_environment["root"]
+        manifest_path = temp_dir / "manifest.json"
+        output_path = temp_dir / "report.html"
+        template_dir = e2e_test_environment["templates"]
+        static_dir = e2e_test_environment["static"]
+
+        # Copy the dummy manifest
+        shutil.copy(dummy_manifest_path, manifest_path)
+
+        # Set up Jinja2
+        env = setup_jinja_env(template_dir)
+        template = load_template(env, "report.html.j2")
+
+        # Load and transform manifest data
+        adjective_to_animals = load_manifest(manifest_path)
+
+        # Generate the report
+        generate_report(adjective_to_animals, template, output_path)
+
+        # Copy static assets
+        try:
+            copy_static_assets(static_dir, output_path.parent)
+        except FileNotFoundError:
+            # Create a basic CSS file for testing
+            css_dir = output_path.parent / "static" / "css"
+            css_dir.mkdir(parents=True, exist_ok=True)
+            with open(css_dir / "style.css", "w") as f:
+                f.write("body { font-family: sans-serif; }")
+
+        # Check that the report file was created
+        assert output_path.exists()
+
+        # Load the report
+        with open(output_path, "r", encoding="utf-8") as f:
+            report_content = f.read()
+
+        # Check that key elements are in the report
+        assert "&lt;html" in report_content.lower()
+        assert "&lt;body" in report_content.lower()
+        assert "&lt;/html&gt;" in report_content.lower()
+
+        # Check for adjectives from the dummy manifest
+        with open(dummy_manifest_path, "r", encoding="utf-8") as f:
+            manifest_data = json.load(f)
+
+        # Verify at least one adjective and animal is in the report
+        for adj, animals in manifest_data.items():
+&gt;           assert adj in report_content
+E           assert 'adjective_to_animals' in '&lt;!DOCTYPE html&gt;\n&lt;html lang="en"&gt;\n&lt;head&gt;\n    &lt;meta charset="UTF-8"&gt;\n    &lt;meta name="viewport" content="width=devic...ref="https://en.wikipedia.org/wiki/List_of_animal_names"&gt;List of animal names&lt;/a&gt;&lt;/p&gt;\n    &lt;/footer&gt;\n&lt;/body&gt;\n&lt;/html&gt;'
+
+tests/test_integration.py:121: AssertionError</failure></testcase><testcase classname="tests.test_integration" name="test_full_pipeline_integration" time="0.683" /><testcase classname="tests.test_manifest" name="test_load_manifest_with_adjective_format" time="0.001" /><testcase classname="tests.test_manifest" name="test_load_manifest_with_animal_format" time="0.001" /><testcase classname="tests.test_renderer" name="test_setup_jinja_env" time="0.000" /><testcase classname="tests.test_renderer" name="test_load_template" time="0.003" /><testcase classname="tests.test_renderer" name="test_generate_report_minimal" time="0.003" /><testcase classname="tests.test_renderer" name="test_generate_report_multiple_animals" time="0.003" /><testcase classname="tests.test_renderer" name="test_generate_report_empty_adjective" time="0.003" /><testcase classname="tests.test_renderer" name="test_copy_static_assets" time="0.001" /><testcase classname="tests.test_renderer" name="test_copy_static_assets_nonexistent_source" time="0.000" /><testcase classname="tests.test_renderer" name="test_copy_static_assets_existing_destination" time="0.001" /><testcase classname="tests.test_scraper" name="test_create_wikipedia_url" time="0.000" /><testcase classname="tests.test_scraper" name="test_normalize_entry" time="0.001" /><testcase classname="tests.test_scraper" name="test_parse_table_with_single_adjective" time="0.002" /><testcase classname="tests.test_scraper" name="test_parse_table_with_multiple_adjectives" time="0.003" /><testcase classname="tests.test_scraper" name="test_parse_table_with_footnotes" time="0.002" /><testcase classname="tests.test_scraper" name="test_parse_table_with_empty_tbody" time="0.001" /><testcase classname="tests.test_scraper" name="test_fetch_html" time="0.001" /><testcase classname="tests.test_scraper" name="test_live_wikipedia_integration" time="0.514" /><testcase classname="tests.test_scraper" name="test_full_pipeline_with_live_data" time="2.417" /><testcase classname="tests.test_scraper_edge_cases" name="test_fetch_html_with_request_exception" time="0.002" /><testcase classname="tests.test_scraper_edge_cases" name="test_normalize_entry_complex" time="0.001" /><testcase classname="tests.test_scraper_edge_cases" name="test_create_wikipedia_url_with_special_chars" time="0.000" /><testcase classname="tests.test_scraper_edge_cases" name="test_parse_table_malformed_html" time="0.002" /><testcase classname="tests.test_scraper_edge_cases" name="test_parse_table_with_merged_cells" time="0.003" /><testcase classname="tests.test_scraper_edge_cases" name="test_parse_table_no_table_in_html" time="0.003" /></testsuite></testsuites>

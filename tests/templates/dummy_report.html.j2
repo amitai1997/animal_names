@@ -6,11 +6,11 @@
 </head>
 <body>
     <h1>Test Adjectives Report</h1>
-    
+
     {% for adjective, animals in adjective_to_animals.items() %}
     <div class="section">
         <h2>{{ adjective }}</h2>
-        
+
         {% if animals %}
         <ul>
             {% for animal in animals %}

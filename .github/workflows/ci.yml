@@ -1,4 +1,4 @@
-name: Basic CI Check
+name: CI with Code Coverage
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
 
@@ -29,6 +29,31 @@ jobs:
       run: |
         poetry install --no-interaction
 
-    - name: Test with pytest
+    - name: Lint with flake8
       run: |
-        poetry run pytest
+        poetry run flake8 src tests
+
+    - name: Check formatting with black
+      run: |
+        poetry run black --check src tests
+
+    - name: Test with pytest and coverage
+      run: |
+        poetry run pytest --cov=src --cov-report=xml --cov-report=html --junitxml=reports/results.xml
+        poetry run coverage html -d reports/coverage
+
+    - name: Check coverage threshold
+      run: |
+        poetry run coverage report --fail-under=90
+
+    - name: Upload coverage artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: reports/coverage/
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: reports/results.xml
