@@ -126,11 +126,11 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
 
     soup = BeautifulSoup(content, "html.parser")
 
-    # Find the "Collateral adjective" table by header text
-    target_table = None
-    animal_col_idx = -1
-    adjective_col_idx = -1
-    column_headers = []
+    # Find all tables with "Collateral adjective" column
+    target_tables = []
+    table_column_info = (
+        []
+    )  # Stores (table, animal_col_idx, adjective_col_idx, column_headers)
 
     # First scan through all tables with the wikitable class
     for table in soup.find_all("table", class_=["wikitable", "sortable"]):
@@ -145,6 +145,9 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
 
             # Extract all column header texts
             header_texts = []
+            animal_col_idx = -1
+            adjective_col_idx = -1
+
             for idx, cell in enumerate(header_cells):
                 text = cell.get_text(strip=True)
                 header_texts.append(text)
@@ -155,20 +158,21 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                 if text in ["Animal", "Trivial name", "Scientific term"]:
                     animal_col_idx = idx
 
-            # If we found both required columns, we can use this table
+            # If we found both required columns, save this table's info
             if adjective_col_idx >= 0 and animal_col_idx >= 0:
-                target_table = table
-                column_headers = header_texts
-                logger.info(f"Found table with columns: {column_headers}")
-                logger.info(
-                    f"Using '{column_headers[animal_col_idx]}' (index {animal_col_idx}) "
-                    f"and '{column_headers[adjective_col_idx]}' (index {adjective_col_idx})"
+                target_tables.append(table)
+                table_column_info.append(
+                    (table, animal_col_idx, adjective_col_idx, header_texts)
                 )
-                break
+                logger.info(f"Found table with columns: {header_texts}")
+                logger.info(
+                    f"Using '{header_texts[animal_col_idx]}' (index {animal_col_idx}) "
+                    f"and '{header_texts[adjective_col_idx]}' (index {adjective_col_idx})"
+                )
 
     # TODO: Remove this block and related tests after confirming the first scan works
     # If we couldn't find with specific classes, try any table (helpful for tests)
-    if not target_table:
+    if not target_tables:
         for table in soup.find_all("table"):
             if isinstance(table, Tag):
                 # Get header row
@@ -181,6 +185,9 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
 
                 # Extract all column header texts
                 header_texts = []
+                animal_col_idx = -1
+                adjective_col_idx = -1
+
                 for idx, cell in enumerate(header_cells):
                     text = cell.get_text(strip=True)
                     header_texts.append(text)
@@ -200,41 +207,41 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if header_texts[0] == "Animal":
                         animal_col_idx = 0
 
-                # If we found both required columns, we can use this table
+                # If we found both required columns, save this table's info
                 if adjective_col_idx >= 0 and animal_col_idx >= 0:
-                    target_table = table
-                    column_headers = header_texts
-                    logger.info(f"Found table with columns: {column_headers}")
-                    logger.info(
-                        f"Using '{column_headers[animal_col_idx]}' (index {animal_col_idx}) "
-                        f"and '{column_headers[adjective_col_idx]}' (index {adjective_col_idx})"
+                    target_tables.append(table)
+                    table_column_info.append(
+                        (table, animal_col_idx, adjective_col_idx, header_texts)
                     )
-                    break
+                    logger.info(f"Found table with columns: {header_texts}")
+                    logger.info(
+                        f"Using '{header_texts[animal_col_idx]}' (index {animal_col_idx}) "
+                        f"and '{header_texts[adjective_col_idx]}' (index {adjective_col_idx})"
+                    )
 
-    if not target_table:
-        error_msg = "Could not find table with 'Collateral adjective' header"
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-
-    if animal_col_idx < 0 or adjective_col_idx < 0:
-        error_msg = "Could not identify animal or adjective columns in the table"
+    if not target_tables:
+        error_msg = "Could not find any tables with 'Collateral adjective' header"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
     # Create adjective to animals mapping
     result: Dict[str, List[Animal]] = {}
 
-    # Process rows in the table body
-    if isinstance(target_table, Tag):
-        rows = target_table.find_all("tr")[1:]  # Skip header row
-        for row in rows:
-            if isinstance(row, Tag):
-                cells = row.find_all(["td", "th"])
+    # Process all found tables
+    for table_info in table_column_info:
+        table, animal_col_idx, adjective_col_idx, column_headers = table_info
 
-                # Skip rows with insufficient cells
-                if len(cells) <= max(animal_col_idx, adjective_col_idx):
-                    logger.warning(f"Skipping row with insufficient cells: {row}")
-                    continue
+        # Process rows in the table body
+        if isinstance(table, Tag):
+            rows = table.find_all("tr")[1:]  # Skip header row
+            for row in rows:
+                if isinstance(row, Tag):
+                    cells = row.find_all(["td", "th"])
+
+                    # Skip rows with insufficient cells
+                    if len(cells) <= max(animal_col_idx, adjective_col_idx):
+                        logger.warning(f"Skipping row with insufficient cells: {row}")
+                        continue
 
                 animal_cell = cells[animal_col_idx]
                 adjective_cell = cells[adjective_col_idx]

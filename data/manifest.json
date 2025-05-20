@@ -1,12 +1,12 @@
 {
-  "bird": "data/images/bird.jpg",
-  "cattle; ox,[5] cow": "data/images/cattle-ox5-cow.jpg",
-  "dog": "data/images/dog.jpg",
-  "whale, dolphin, porpoise": "data/images/whale-dolphin-porpoise.jpg",
-  "horse": "data/images/horse.jpg",
-  "cat": "data/images/cat.jpg",
-  "pig": "data/images/pig.jpg",
-  "Ferret family of Carnivorans(large: badgers & wolverines;small: weasels & ferrets)": "data/images/ferret-family-of-carnivoranslarge-badgers-wolverinessmall-weasels-ferrets.jpg",
-  "rabbits & hares": "data/images/rabbits-hares.jpg",
-  "bony fish": "data/images/bony-fish.jpg"
+  "bird": "/tmp/bird.jpg",
+  "cattle; ox,[5] cow": "/tmp/cattle-ox5-cow.jpg",
+  "dog": "/tmp/dog.jpg",
+  "whale, dolphin, porpoise": "/tmp/whale-dolphin-porpoise.jpg",
+  "horse": "/tmp/horse.jpg",
+  "cat": "/tmp/cat.jpg",
+  "pig": "/tmp/pig.jpg",
+  "Ferret family of Carnivorans(large: badgers & wolverines;small: weasels & ferrets)": "/tmp/ferret-family-of-carnivoranslarge-badgers-wolverinessmall-weasels-ferrets.jpg",
+  "rabbits & hares": "/tmp/rabbits-hares.jpg",
+  "bony fish": "/tmp/bony-fish.jpg"
 }
