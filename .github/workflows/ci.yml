@@ -46,13 +46,6 @@ jobs:
       run: |
         poetry run coverage report --fail-under=90
 
-    - name: Upload coverage report
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
-        flags: unittests
-
     - name: Upload coverage artifacts
       uses: actions/upload-artifact@v4
       with:
