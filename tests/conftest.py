@@ -1,13 +1,13 @@
 """Pytest configuration file with common fixtures."""
 
-import os
-import json
-import shutil
-import threading
 import http.server
+import json
+import os
+import shutil
 import socketserver
+import threading
 from pathlib import Path
-from typing import Dict, List, Generator, Any
+from typing import Any, Dict, Generator, List
 
 import pytest
 
@@ -89,22 +89,22 @@ def test_http_server():
     """Start a test HTTP server for image download tests."""
     # Import the HTTP handler from fixtures
     from tests.fixtures.server import TestHTTPHandler
-    
+
     # Find an available port
     with socketserver.TCPServer(("", 0), None) as s:
         port = s.server_address[1]
-    
+
     # Create and start the server
     handler = TestHTTPHandler
     server = socketserver.TCPServer(("", port), handler)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
     server_thread.start()
-    
+
     # Return the server URL
     server_url = f"http://localhost:{port}"
     yield server_url
-    
+
     # Clean up
     server.shutdown()
     server.server_close()
@@ -116,35 +116,35 @@ def e2e_test_environment(temp_dir):
     # Create necessary directories
     images_dir = temp_dir / "images"
     images_dir.mkdir(exist_ok=True)
-    
+
     templates_dir = temp_dir / "templates"
     templates_dir.mkdir(exist_ok=True)
-    
+
     static_dir = temp_dir / "static"
     static_dir.mkdir(exist_ok=True)
-    
+
     reports_dir = temp_dir / "reports"
     reports_dir.mkdir(exist_ok=True)
     reports_coverage_dir = reports_dir / "coverage"
     reports_coverage_dir.mkdir(exist_ok=True)
-    
+
     # Copy necessary files
     # Copy templates
     project_templates = Path(__file__).parent.parent / "templates"
     if project_templates.exists():
         shutil.copytree(project_templates, templates_dir, dirs_exist_ok=True)
-    
+
     # Copy static assets
     project_static = Path(__file__).parent.parent / "static"
     if project_static.exists():
         shutil.copytree(project_static, static_dir, dirs_exist_ok=True)
-    
+
     # Copy sample image for placeholder
     placeholder_src = Path(__file__).parent / "fixtures" / "sample_image.jpg"
     placeholder_dest = temp_dir / "images" / "placeholder.jpg"
     if placeholder_src.exists():
         shutil.copy(placeholder_src, placeholder_dest)
-    
+
     # Return paths dictionary
     return {
         "root": temp_dir,

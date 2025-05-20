@@ -11,7 +11,7 @@ monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1059234a0&gt;
         html_snapshot_path = temp_dir / "snapshot.html"
         template_dir = temp_dir / "templates"
         static_dir = temp_dir / "static"
-    
+
         # Create template dir and copy template
         template_dir.mkdir(parents=True, exist_ok=True)
         shutil.copytree(
@@ -19,7 +19,7 @@ monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1059234a0&gt;
             template_dir,
             dirs_exist_ok=True
         )
-    
+
         # Create static dir and copy static files
         static_dir.mkdir(parents=True, exist_ok=True)
         shutil.copytree(
@@ -27,7 +27,7 @@ monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1059234a0&gt;
             static_dir,
             dirs_exist_ok=True
         )
-    
+
         args = [
             "--output", str(output_path),
             "--image-dir", str(image_dir),
@@ -37,49 +37,49 @@ monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1059234a0&gt;
             "--static-dir", str(static_dir),
             "--skip-download",  # Skip download to avoid network requests
         ]
-    
+
         monkeypatch.setattr(sys, "argv", ["cli.py"] + args)
-    
+
         # Mock only the fetch_html and parse_table functions
         # This keeps most of the real functionality intact
         animal_data = {"feline": [{"name": "cat", "image_path": "cat.jpg"}]}
-    
+
         # Create a manifest file
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(animal_data, f)
-    
+
         with patch("src.cli.fetch_html"), \
              patch("src.cli.parse_table", return_value=animal_data):
-    
+
 &gt;           result = main()
 
-tests/test_cli.py:297: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cli.py:297:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/cli.py:157: in main
     adjective_to_animals = load_manifest(args.manifest)
 src/renderer.py:134: in load_manifest
     adjective_to_animals_raw = parse_table(html_path)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 html_path = PosixPath('/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0/raw_snapshot.html')
 
     def parse_table(html_path: Path) -&gt; Dict[str, List[Animal]]:
         """
         Parse the "Collateral adjective" table from HTML file.
-    
+
         Args:
             html_path: Path to the HTML file to parse.
-    
+
         Returns:
             Dictionary mapping collateral adjectives to lists of Animal objects.
-    
+
         Raises:
             FileNotFoundError: If the HTML file doesn't exist.
             ValueError: If the table couldn't be found or parsed.
         """
         logger.info(f"Parsing table from {html_path}")
-    
+
         try:
 &gt;           with open(html_path, "r", encoding="utf-8") as f:
 E           FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_end_to_end_integration0/raw_snapshot.html'
@@ -96,20 +96,20 @@ test_http_server = 'http://localhost:54768'
         image_dir = temp_dir / "images"
         manifest_path = temp_dir / "manifest.json"
         image_dir.mkdir(exist_ok=True)
-    
+
         # Copy the raw snapshot
         shutil.copy(raw_snapshot_path, html_snapshot)
-    
+
         # Parse the table
         adjective_animals = parse_table(html_snapshot)
-    
+
         # Make sure we got some data
         assert len(adjective_animals) &gt; 0
-    
+
         # Mock the extract_image_url to use our test server
         def mock_extract_image_url(page_url):
             return f"{test_http_server}/success.jpg"
-    
+
         # Download images for a small subset of animals (for speed)
         with patch("src.downloader.extract_image_url", side_effect=mock_extract_image_url):
             # Use just the first 2 adjectives and max 2 animals per adjective
@@ -118,7 +118,7 @@ test_http_server = 'http://localhost:54768'
                 if i &gt;= 2:  # Limit to 2 adjectives
                     break
                 limited_animals[adj] = animals[:2]  # Limit to 2 animals per adjective
-    
+
             manifest = download_images(
                 limited_animals,
                 image_dir,
@@ -126,17 +126,17 @@ test_http_server = 'http://localhost:54768'
                 retries=2,
                 placeholder_path=Path(__file__).parent / "fixtures" / "sample_image.jpg"
             )
-    
+
             # Save the manifest
             manifest.to_json(manifest_path)
-    
+
         # Check that the manifest file was created
         assert manifest_path.exists()
-    
+
         # Check manifest contains our data
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest_data = json.load(f)
-    
+
         for adj in limited_animals.keys():
 &gt;           assert adj in manifest_data
 E           AssertionError: assert 'avian' in {'bird': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/bird.jpg', 'cattle; ox,[5] cow': '/private/tmp/pytest-of-amitaisalmon/pytest-26/test_scraper_to_downloader_int0/images/cattle-ox5-cow.jpg'}
@@ -153,20 +153,20 @@ dummy_manifest_path = PosixPath('/Users/amitaisalmon/Documents/animal_names/test
         output_path = temp_dir / "report.html"
         template_dir = e2e_test_environment["templates"]
         static_dir = e2e_test_environment["static"]
-    
+
         # Copy the dummy manifest
         shutil.copy(dummy_manifest_path, manifest_path)
-    
+
         # Set up Jinja2
         env = setup_jinja_env(template_dir)
         template = load_template(env, "report.html.j2")
-    
+
         # Load and transform manifest data
         adjective_to_animals = load_manifest(manifest_path)
-    
+
         # Generate the report
         generate_report(adjective_to_animals, template, output_path)
-    
+
         # Copy static assets
         try:
             copy_static_assets(static_dir, output_path.parent)
@@ -176,23 +176,23 @@ dummy_manifest_path = PosixPath('/Users/amitaisalmon/Documents/animal_names/test
             css_dir.mkdir(parents=True, exist_ok=True)
             with open(css_dir / "style.css", "w") as f:
                 f.write("body { font-family: sans-serif; }")
-    
+
         # Check that the report file was created
         assert output_path.exists()
-    
+
         # Load the report
         with open(output_path, "r", encoding="utf-8") as f:
             report_content = f.read()
-    
+
         # Check that key elements are in the report
         assert "&lt;html" in report_content.lower()
         assert "&lt;body" in report_content.lower()
         assert "&lt;/html&gt;" in report_content.lower()
-    
+
         # Check for adjectives from the dummy manifest
         with open(dummy_manifest_path, "r", encoding="utf-8") as f:
             manifest_data = json.load(f)
-    
+
         # Verify at least one adjective and animal is in the report
         for adj, animals in manifest_data.items():
 &gt;           assert adj in report_content

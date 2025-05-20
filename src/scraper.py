@@ -15,12 +15,15 @@ from typing import Dict, List, Optional
 import requests  # type: ignore
 from bs4 import BeautifulSoup, Tag  # type: ignore
 
+
 @dataclass
 class Animal:
     """Class representing an animal with its name and corresponding page URL."""
+
     name: str
     page_url: Optional[str] = None
     image_path: Optional[str] = None
+
 
 # Configure logger
 logging.basicConfig(
@@ -67,26 +70,26 @@ def fetch_html(url: str, dest: Path) -> None:
 def create_wikipedia_url(name: str) -> str:
     """
     Create a valid Wikipedia URL from an animal name.
-    
+
     Args:
         name: The raw animal name that might contain invalid URL characters.
-        
+
     Returns:
         A properly formatted Wikipedia URL for the animal.
     """
     # Take only the first animal if multiple are listed (separated by commas or semicolons)
-    if ',' in name:
-        name = name.split(',')[0]
-    if ';' in name:
-        name = name.split(';')[0]
-    
+    if "," in name:
+        name = name.split(",")[0]
+    if ";" in name:
+        name = name.split(";")[0]
+
     # Remove footnote references like [5] and anything in parentheses
-    name = re.sub(r'\[\d+\]', '', name)  # Remove [5], [3], etc.
-    name = re.sub(r'\([^)]*\)', '', name)  # Remove anything in parentheses
-    
+    name = re.sub(r"\[\d+\]", "", name)  # Remove [5], [3], etc.
+    name = re.sub(r"\([^)]*\)", "", name)  # Remove anything in parentheses
+
     # Clean and normalize the name
     name = name.strip()
-    
+
     # Special cases for common animals that might have redirects
     name_lower = name.lower()
     if "dog" in name_lower:
@@ -105,13 +108,13 @@ def create_wikipedia_url(name: str) -> str:
         return "https://en.wikipedia.org/wiki/Dolphin"
     elif "rabbit" in name_lower or "hare" in name_lower:
         return "https://en.wikipedia.org/wiki/Rabbit"
-    
+
     # Replace spaces with underscores for URL format
-    url_name = name.replace(' ', '_')
-    
+    url_name = name.replace(" ", "_")
+
     # Remove any remaining problematic characters
-    url_name = re.sub(r'[^\w\-_]', '', url_name)
-    
+    url_name = re.sub(r"[^\w\-_]", "", url_name)
+
     return f"https://en.wikipedia.org/wiki/{url_name}"
 
 
@@ -177,7 +180,7 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     # Find the "Collateral adjective" table by header text
     target_table = None
     animal_col_name = ""
-    
+
     # First check tables with the specific wikitable class (production case)
     for table in soup.find_all("table", class_=["wikitable", "sortable"]):
         if isinstance(table, Tag):
@@ -185,17 +188,19 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
             for header in headers:
                 if "Collateral adjective" in header.get_text():
                     target_table = table
-                    
+
                     # Find the column that likely contains animal names
                     possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
                     header_texts = [th.get_text(strip=True) for th in headers]
-                    
+
                     for col in possible_animal_cols:
                         if col in header_texts:
                             animal_col_name = col
-                            logger.info(f"Found table with '{col}' and 'Collateral adjective' columns")
+                            logger.info(
+                                f"Found table with '{col}' and 'Collateral adjective' columns"
+                            )
                             break
-                    
+
                     if animal_col_name:  # Found a valid animal column
                         break
                     else:
@@ -203,7 +208,7 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                         target_table = None
         if target_table and animal_col_name:
             break
-    
+
     # If we couldn't find a table with the specific class, check all tables (test case)
     if not target_table:
         for table in soup.find_all("table"):
@@ -212,24 +217,34 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                 for header in headers:
                     if "Collateral adjective" in header.get_text():
                         target_table = table
-                        
+
                         # Find the column that likely contains animal names
-                        possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
+                        possible_animal_cols = [
+                            "Animal",
+                            "Trivial name",
+                            "Scientific term",
+                        ]
                         header_texts = [th.get_text(strip=True) for th in headers]
-                        
+
                         for col in possible_animal_cols:
                             if col in header_texts:
                                 animal_col_name = col
-                                logger.info(f"Found table with '{col}' and 'Collateral adjective' columns")
+                                logger.info(
+                                    f"Found table with '{col}' and 'Collateral adjective' columns"
+                                )
                                 break
-                        
+
                         # If we don't find a recognized column but Animal is the first column,
                         # assume it's our test table
-                        if not animal_col_name and len(header_texts) > 0 and header_texts[0] == "Animal":
+                        if (
+                            not animal_col_name
+                            and len(header_texts) > 0
+                            and header_texts[0] == "Animal"
+                        ):
                             animal_col_name = "Animal"
                             logger.info(f"Using '{animal_col_name}' from test fixture")
                             break
-                        
+
                         if animal_col_name:  # Found a valid animal column
                             break
                         else:
@@ -256,10 +271,13 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     try:
         animal_idx = header_texts.index(animal_col_name)
         adjective_idx = header_texts.index("Collateral adjective")
-        logger.info(f"Using '{animal_col_name}' column (index {animal_idx}) and 'Collateral adjective' column (index {adjective_idx})")
+        logger.info(
+            f"Using '{animal_col_name}' column (index {animal_idx}) and 'Collateral adjective' column (index {adjective_idx})"
+        )
     except ValueError:
         error_msg = (
-            f"Required columns '{animal_col_name}' or 'Collateral adjective' " "not found in table"
+            f"Required columns '{animal_col_name}' or 'Collateral adjective' "
+            "not found in table"
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
@@ -295,14 +313,14 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                 page_url = None
                 if isinstance(animal_cell, Tag):
                     # Extract the href from the first <a> tag if present
-                    link = animal_cell.find('a')
-                    if link and 'href' in link.attrs:
+                    link = animal_cell.find("a")
+                    if link and "href" in link.attrs:
                         # Convert relative URL to absolute URL
-                        href = link['href']
-                        if href.startswith('/wiki/'):
+                        href = link["href"]
+                        if href.startswith("/wiki/"):
                             page_url = f"https://en.wikipedia.org{href}"
                             logger.debug(f"Found direct link in cell: {page_url}")
-                    
+
                     # Remove <small> tags
                     for small in animal_cell.find_all("small"):
                         # Remove the <small> tag and its contents
@@ -336,14 +354,16 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     adj_lower = adjective.lower()
                     if adj_lower not in result:
                         result[adj_lower] = []
-                    
+
                     # Use the directly extracted URL if available, otherwise fall back to our function
                     if page_url is None:
                         page_url = create_wikipedia_url(animal_name)
-                        logger.debug(f"Using generated URL for {animal_name}: {page_url}")
-                    
+                        logger.debug(
+                            f"Using generated URL for {animal_name}: {page_url}"
+                        )
+
                     animal_obj = Animal(name=animal_name, page_url=page_url)
-                    
+
                     # Check if this animal already exists in the list
                     if not any(a.name == animal_name for a in result[adj_lower]):
                         result[adj_lower].append(animal_obj)

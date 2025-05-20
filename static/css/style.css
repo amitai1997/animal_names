@@ -157,15 +157,15 @@ a:hover {
     .animal-report__grid {
         grid-template-columns: 1fr;
     }
-    
+
     .animal-report__animals {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
-    
+
     h1 {
         font-size: 1.75rem;
     }
-    
+
     h2 {
         font-size: 1.25rem;
     }
@@ -175,15 +175,15 @@ a:hover {
     body {
         padding: 10px;
     }
-    
+
     .animal-report__section {
         padding: 1rem;
     }
-    
+
     .animal-report__animals {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .animal-report__image {
         height: 80px;
     }

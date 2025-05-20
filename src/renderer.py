@@ -8,7 +8,7 @@ and copying static assets to the output directory.
 import json
 import shutil
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader, Template
 
@@ -24,7 +24,7 @@ def setup_jinja_env(template_dir: Path) -> Environment:
         Jinja2 Environment configured with the template directory and strict undefined.
     """
     from jinja2 import StrictUndefined
-    
+
     env = Environment(
         loader=FileSystemLoader(template_dir),
         trim_blocks=True,
@@ -51,7 +51,9 @@ def load_template(env: Environment, name: str) -> Template:
     return env.get_template(name)
 
 
-def generate_report(data: Dict[str, List[Dict]], template: Template, output_path: Path) -> None:
+def generate_report(
+    data: Dict[str, List[Dict]], template: Template, output_path: Path
+) -> None:
     """
     Generate an HTML report from the given data and template.
 
@@ -80,27 +82,30 @@ def copy_static_assets(src_dir: Path, dest_dir: Path) -> None:
         None. The assets are copied to the destination directory.
     """
     import logging
+
     logger = logging.getLogger(__name__)
-    
+
     if not dest_dir.exists():
         dest_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Check if source directory exists
     if not src_dir.exists():
-        logger.warning(f"Static assets directory {src_dir} does not exist, skipping copy")
+        logger.warning(
+            f"Static assets directory {src_dir} does not exist, skipping copy"
+        )
         return
-    
+
     # Use shutil to copy the entire directory
     # If destination exists, it will merge the contents
     dest_static = dest_dir / "static"
     if dest_static.exists():
         shutil.rmtree(dest_static)
-    
+
     # Create the destination directory explicitly
     dest_static.mkdir(parents=True, exist_ok=True)
-    
+
     # Manually copy files to avoid the 'same source and destination' error
-    for item in src_dir.glob('**/*'):
+    for item in src_dir.glob("**/*"):
         if item.is_file():
             # Calculate relative path
             rel_path = item.relative_to(src_dir)
@@ -124,37 +129,36 @@ def load_manifest(manifest_path: Path) -> Dict[str, List[Dict]]:
     """
     with open(manifest_path, "r", encoding="utf-8") as f:
         manifest = json.load(f)
-    
+
     try:
         # Check if manifest is already in the right format
         if "adjective_to_animals" in manifest:
             return manifest["adjective_to_animals"]
     except (TypeError, KeyError):
         pass
-    
+
     # The manifest has a format of animal_name -> image_path
     # We need to transform it to adjective -> [{"name": animal_name, "image_path": image_path}, ...]
     # For this, we'll need to use the scraper's parse_table function to get the adjective -> animal mapping
     from src.scraper import parse_table
-    
+
     # Get the raw_snapshot.html path from the same directory as manifest.json
     html_path = manifest_path.parent / "raw_snapshot.html"
-    
+
     # Parse the HTML to get the adjective -> animal mapping
     adjective_to_animals = {}
-    
+
     # Get the adjective -> animal mapping
     adjective_to_animals_raw = parse_table(html_path)
-    
+
     # Transform the mapping to include image paths
     for adjective, animals in adjective_to_animals_raw.items():
         adjective_to_animals[adjective] = []
         for animal in animals:
             animal_name = animal.name
             if animal_name in manifest:
-                adjective_to_animals[adjective].append({
-                    "name": animal_name,
-                    "image_path": manifest[animal_name]
-                })
-    
+                adjective_to_animals[adjective].append(
+                    {"name": animal_name, "image_path": manifest[animal_name]}
+                )
+
     return adjective_to_animals
