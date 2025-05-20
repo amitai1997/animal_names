@@ -73,6 +73,55 @@ python -m src.cli --output report.html --workers=16 --retries=5
 python -m src.cli --output report.html --verbose
 ```
 
+## Docker Usage
+
+You can build and run this project using Docker. This ensures a consistent environment and avoids dependency issues.
+
+### Build the Docker Image
+
+```bash
+docker build -t animal-names .
+```
+
+### Run the CLI to Generate the Report
+
+```bash
+docker run --rm -v $(pwd):/app animal-names
+```
+
+This will generate `report.html` and a `static/` directory in your project root.
+
+### Opening the Generated Report
+
+After running the Docker command:
+
+```bash
+docker run --rm -v $(pwd):/app animal-names
+```
+
+the generated `report.html` file will appear in your current working directory on your host machine (not inside the container).
+To open it, simply run:
+
+```bash
+open report.html
+```
+
+on macOS, or double-click the file in your file explorer.
+
+### Run the CLI with Custom Arguments
+
+You can override the default command. For example:
+
+```bash
+docker run --rm -v $(pwd):/app animal-names python -m src.cli --output report.html --skip-download --verbose
+```
+
+### Run Tests in Docker
+
+```bash
+docker run --rm -v $(pwd):/app animal-names python -m pytest
+```
+
 ## Development
 
 ### Testing
