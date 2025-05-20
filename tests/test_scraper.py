@@ -33,8 +33,8 @@ def test_parse_table_with_single_adjective(tmp_path: Path) -> None:
     result = parse_table(fixture_path)
 
     assert "avian" in result
-    assert "bird" in result["avian"]
     assert len(result["avian"]) == 1
+    assert result["avian"][0].name == "bird"
 
 
 def test_parse_table_with_multiple_adjectives(tmp_path: Path) -> None:
@@ -46,8 +46,8 @@ def test_parse_table_with_multiple_adjectives(tmp_path: Path) -> None:
     # Check for feline and felid adjectives (both should point to cat)
     assert "feline" in result
     assert "felid" in result
-    assert "cat" in result["feline"]
-    assert "cat" in result["felid"]
+    assert result["feline"][0].name == "cat"
+    assert result["felid"][0].name == "cat"
 
 
 def test_parse_table_with_footnotes(tmp_path: Path) -> None:
@@ -58,8 +58,8 @@ def test_parse_table_with_footnotes(tmp_path: Path) -> None:
 
     # Check that the animal name with a <small> footnote is properly parsed
     assert "simian" in result
-    assert "monkey" in result["simian"]
-    assert "(primate)" not in result["simian"][0]  # Should be stripped out
+    assert result["simian"][0].name == "monkey"
+    assert "(primate)" not in result["simian"][0].name  # Should be stripped out
 
 
 def test_parse_table_with_empty_tbody(tmp_path: Path) -> None:

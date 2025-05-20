@@ -187,7 +187,7 @@ def fetch_with_retries(url: str, dest: Path, retries: int = 3) -> bool:
             
             # Skip large files (>5MB)
             content_length = response.headers.get("Content-Length")
-            if content_length and int(content_length) > 5 * 1024 * 1024:
+            if content_length and isinstance(content_length, str) and int(content_length) > 5 * 1024 * 1024:
                 logger.warning(f"Skipping large file ({content_length} bytes): {url}")
                 return False
             
