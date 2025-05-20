@@ -137,7 +137,7 @@ def print_adjective_animals(adjective_animals, manifest):
             image_path = animal_image_path or image_paths.get(
                 animal_name, "No image available"
             )
-            print(f"  - {animal_name} [Image: {image_path}]")
+            print(f" - {animal_name} [Image: {image_path}]")
 
     print("\n" + "-" * 60)
     print(f"Total: {len(adjective_animals)} adjectives")

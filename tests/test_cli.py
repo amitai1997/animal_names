@@ -270,11 +270,13 @@ def test_main_skip_download_no_manifest(temp_dir, monkeypatch):
     [
         (True, False, False, "DEBUG"),  # Verbose overrides all
         (False, True, False, "ERROR"),  # Quiet overrides show_logs
-        (False, False, True, "INFO"),   # show_logs enables INFO level
-        (False, False, False, "ERROR"), # Default is ERROR level (hide logs)
+        (False, False, True, "INFO"),  # show_logs enables INFO level
+        (False, False, False, "ERROR"),  # Default is ERROR level (hide logs)
     ],
 )
-def test_main_logging_level(temp_dir, monkeypatch, verbose, quiet, show_logs, expected_level):
+def test_main_logging_level(
+    temp_dir, monkeypatch, verbose, quiet, show_logs, expected_level
+):
     """Test that main sets the correct logging level based on verbosity flags."""
     output_path = temp_dir / "output.html"
 
