@@ -6,6 +6,13 @@ A Python application that scrapes Wikipedia's "List of animal names" page, extra
 
 ## Implementation Progress
 
+### Day 2: Downloader Implementation ✅
+- Implemented multithreaded image downloader with retry logic
+- Created Animal dataclass to represent animals with page URLs and image paths
+- Built a Manifest system to track downloaded images
+- Added comprehensive test suite for the downloader module
+- Integrated the downloader with the CLI interface
+
 ### Day 1: Scraper Implementation ✅
 - Implemented `fetch_html` function to download the Wikipedia page
 - Created `normalize_entry` to strip HTML tags and normalize text
@@ -25,9 +32,26 @@ This project walks from concept to delivery in a structured approach:
 
 The project is organized into several core components:
 - `src/scraper.py`: HTML fetching and parsing
-- `src/downloader.py`: Threaded image downloads (coming in Day 2)
+- `src/downloader.py`: Threaded image downloads with retry logic
 - `src/renderer.py`: HTML/Jinja2 output generation (coming in Day 3)
 - `src/cli.py`: Command-line interface
+
+### Downloader Component (Day 2)
+
+The downloader module provides functionality for downloading animal images concurrently, with retry logic and error handling:
+
+1. `download_images(mapping: Dict[str, List[Animal]], output_dir: Path, workers: int, retries: int) → Manifest`: Downloads images for all animals in the mapping using a thread pool.
+2. `extract_image_url(page_url: str) → str`: Extracts the thumbnail image URL from a Wikipedia page.
+3. `fetch_with_retries(url: str, dest: Path, retries: int) → bool`: Downloads an image with exponential backoff and retry logic.
+4. `slugify(name: str) → str`: Converts animal names to URL/filename-friendly slugs.
+
+Key features of the downloader:
+- Multithreaded downloads using ThreadPoolExecutor
+- Exponential backoff with random jitter for retries
+- Session reuse per thread for connection optimization
+- Progress tracking and detailed logging
+- Placeholder image substitution for failed downloads
+- Manifest generation for tracking downloaded images
 
 ### Scraper Component (Day 1)
 
@@ -35,7 +59,7 @@ The scraper module provides three main functions:
 
 1. `fetch_html(url: str, dest: Path) -> None`: Downloads the HTML from the specified URL and saves it to the destination path.
 2. `normalize_entry(raw: str) -> str`: Strips HTML tags, normalizes whitespace, and unescapes HTML entities.
-3. `parse_table(html_path: Path) -> Dict[str, List[str]]`: Parses the "Collateral adjective" table from the HTML file and returns a dictionary mapping adjectives to lists of animal names.
+3. `parse_table(html_path: Path) -> Dict[str, List[Animal]])`: Parses the "Collateral adjective" table from the HTML file and returns a dictionary mapping adjectives to lists of Animal objects.
 
 The scraper handles various edge cases:
 - Multiple adjectives in a single cell (separated by commas or semicolons)

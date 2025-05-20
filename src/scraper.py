@@ -8,11 +8,19 @@ focusing on the collateral adjective table.
 import html
 import logging
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests  # type: ignore
 from bs4 import BeautifulSoup, Tag  # type: ignore
+
+@dataclass
+class Animal:
+    """Class representing an animal with its name and corresponding page URL."""
+    name: str
+    page_url: Optional[str] = None
+    image_path: Optional[str] = None
 
 # Configure logger
 logging.basicConfig(
@@ -56,6 +64,57 @@ def fetch_html(url: str, dest: Path) -> None:
         raise
 
 
+def create_wikipedia_url(name: str) -> str:
+    """
+    Create a valid Wikipedia URL from an animal name.
+    
+    Args:
+        name: The raw animal name that might contain invalid URL characters.
+        
+    Returns:
+        A properly formatted Wikipedia URL for the animal.
+    """
+    # Take only the first animal if multiple are listed (separated by commas or semicolons)
+    if ',' in name:
+        name = name.split(',')[0]
+    if ';' in name:
+        name = name.split(';')[0]
+    
+    # Remove footnote references like [5] and anything in parentheses
+    name = re.sub(r'\[\d+\]', '', name)  # Remove [5], [3], etc.
+    name = re.sub(r'\([^)]*\)', '', name)  # Remove anything in parentheses
+    
+    # Clean and normalize the name
+    name = name.strip()
+    
+    # Special cases for common animals that might have redirects
+    name_lower = name.lower()
+    if "dog" in name_lower:
+        return "https://en.wikipedia.org/wiki/Dog"
+    elif "cat" in name_lower:
+        return "https://en.wikipedia.org/wiki/Cat"
+    elif "bird" in name_lower:
+        return "https://en.wikipedia.org/wiki/Bird"
+    elif "fish" in name_lower:
+        return "https://en.wikipedia.org/wiki/Fish"
+    elif "horse" in name_lower:
+        return "https://en.wikipedia.org/wiki/Horse"
+    elif "whale" in name_lower:
+        return "https://en.wikipedia.org/wiki/Whale"
+    elif "dolphin" in name_lower:
+        return "https://en.wikipedia.org/wiki/Dolphin"
+    elif "rabbit" in name_lower or "hare" in name_lower:
+        return "https://en.wikipedia.org/wiki/Rabbit"
+    
+    # Replace spaces with underscores for URL format
+    url_name = name.replace(' ', '_')
+    
+    # Remove any remaining problematic characters
+    url_name = re.sub(r'[^\w\-_]', '', url_name)
+    
+    return f"https://en.wikipedia.org/wiki/{url_name}"
+
+
 def normalize_entry(raw: str) -> str:
     """
     Strip HTML tags, normalize whitespace, and unescape HTML entities.
@@ -90,7 +149,7 @@ def normalize_entry(raw: str) -> str:
     return text
 
 
-def parse_table(html_path: Path) -> Dict[str, List[str]]:
+def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     """
     Parse the "Collateral adjective" table from HTML file.
 
@@ -98,7 +157,7 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
         html_path: Path to the HTML file to parse.
 
     Returns:
-        Dictionary mapping collateral adjectives to lists of animal names.
+        Dictionary mapping collateral adjectives to lists of Animal objects.
 
     Raises:
         FileNotFoundError: If the HTML file doesn't exist.
@@ -117,22 +176,74 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
 
     # Find the "Collateral adjective" table by header text
     target_table = None
-    for table in soup.find_all("table"):
+    animal_col_name = ""
+    
+    # First check tables with the specific wikitable class (production case)
+    for table in soup.find_all("table", class_=["wikitable", "sortable"]):
         if isinstance(table, Tag):
             headers = table.find_all("th")
             for header in headers:
                 if "Collateral adjective" in header.get_text():
                     target_table = table
-                    break
-        if target_table:
+                    
+                    # Find the column that likely contains animal names
+                    possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
+                    header_texts = [th.get_text(strip=True) for th in headers]
+                    
+                    for col in possible_animal_cols:
+                        if col in header_texts:
+                            animal_col_name = col
+                            logger.info(f"Found table with '{col}' and 'Collateral adjective' columns")
+                            break
+                    
+                    if animal_col_name:  # Found a valid animal column
+                        break
+                    else:
+                        # Keep looking for a better table with an animal column
+                        target_table = None
+        if target_table and animal_col_name:
             break
+    
+    # If we couldn't find a table with the specific class, check all tables (test case)
+    if not target_table:
+        for table in soup.find_all("table"):
+            if isinstance(table, Tag):
+                headers = table.find_all("th")
+                for header in headers:
+                    if "Collateral adjective" in header.get_text():
+                        target_table = table
+                        
+                        # Find the column that likely contains animal names
+                        possible_animal_cols = ["Animal", "Trivial name", "Scientific term"]
+                        header_texts = [th.get_text(strip=True) for th in headers]
+                        
+                        for col in possible_animal_cols:
+                            if col in header_texts:
+                                animal_col_name = col
+                                logger.info(f"Found table with '{col}' and 'Collateral adjective' columns")
+                                break
+                        
+                        # If we don't find a recognized column but Animal is the first column,
+                        # assume it's our test table
+                        if not animal_col_name and len(header_texts) > 0 and header_texts[0] == "Animal":
+                            animal_col_name = "Animal"
+                            logger.info(f"Using '{animal_col_name}' from test fixture")
+                            break
+                        
+                        if animal_col_name:  # Found a valid animal column
+                            break
+                        else:
+                            # Keep looking for a better table with an animal column
+                            target_table = None
+            if target_table and animal_col_name:
+                break
 
     if not target_table:
         error_msg = "Could not find table with 'Collateral adjective' header"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    # Identify column indices for "Animal" and "Collateral adjective"
+    # Identify column indices for animal column and "Collateral adjective"
     header_row = target_table.find("tr")
     if not isinstance(header_row, Tag):
         error_msg = "Header row is not a Tag"
@@ -143,17 +254,18 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
     header_texts: List[str] = [th.get_text(strip=True) for th in headers_elements]
 
     try:
-        animal_idx = header_texts.index("Animal")
+        animal_idx = header_texts.index(animal_col_name)
         adjective_idx = header_texts.index("Collateral adjective")
+        logger.info(f"Using '{animal_col_name}' column (index {animal_idx}) and 'Collateral adjective' column (index {adjective_idx})")
     except ValueError:
         error_msg = (
-            "Required columns 'Animal' or 'Collateral adjective' " "not found in table"
+            f"Required columns '{animal_col_name}' or 'Collateral adjective' " "not found in table"
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
 
     # Create adjective to animals mapping
-    result: Dict[str, List[str]] = {}
+    result: Dict[str, List[Animal]] = {}
 
     # Process rows in the table body
     if isinstance(target_table, Tag):
@@ -180,7 +292,18 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
                     )
 
                 # Extract and normalize animal name, handling footnotes in <small> tags
+                page_url = None
                 if isinstance(animal_cell, Tag):
+                    # Extract the href from the first <a> tag if present
+                    link = animal_cell.find('a')
+                    if link and 'href' in link.attrs:
+                        # Convert relative URL to absolute URL
+                        href = link['href']
+                        if href.startswith('/wiki/'):
+                            page_url = f"https://en.wikipedia.org{href}"
+                            logger.debug(f"Found direct link in cell: {page_url}")
+                    
+                    # Remove <small> tags
                     for small in animal_cell.find_all("small"):
                         # Remove the <small> tag and its contents
                         small.decompose()
@@ -213,8 +336,17 @@ def parse_table(html_path: Path) -> Dict[str, List[str]]:
                     adj_lower = adjective.lower()
                     if adj_lower not in result:
                         result[adj_lower] = []
-                    if animal_name not in result[adj_lower]:
-                        result[adj_lower].append(animal_name)
+                    
+                    # Use the directly extracted URL if available, otherwise fall back to our function
+                    if page_url is None:
+                        page_url = create_wikipedia_url(animal_name)
+                        logger.debug(f"Using generated URL for {animal_name}: {page_url}")
+                    
+                    animal_obj = Animal(name=animal_name, page_url=page_url)
+                    
+                    # Check if this animal already exists in the list
+                    if not any(a.name == animal_name for a in result[adj_lower]):
+                        result[adj_lower].append(animal_obj)
 
     logger.info(f"Extracted {len(result)} adjective-animal mappings")
     return result
