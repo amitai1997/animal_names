@@ -1,0 +1,30 @@
+{% extends "base.html.j2" %}
+
+{% block title %}Animal Collateral Adjectives Report{% endblock %}
+
+{% block header %}Collateral Adjectives for Animals{% endblock %}
+
+{% block content %}
+<div class="animal-report__grid">
+    {% for adjective, animals in adjective_to_animals.items() %}
+    <section class="animal-report__section">
+        <h2 class="animal-report__adjective">{{ adjective }}</h2>
+        
+        {% if animals %}
+        <ul class="animal-report__animals">
+            {% for animal in animals %}
+            <li class="animal-report__animal">
+                <div class="animal-report__card">
+                    <img src="{{ animal.image_path }}" alt="{{ animal.name }}" class="animal-report__image">
+                    <div class="animal-report__name">{{ animal.name }}</div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="animal-report__empty">No animals found with this adjective.</p>
+        {% endif %}
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

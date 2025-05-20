@@ -1,0 +1,29 @@
+{
+  "adjective_to_animals": {
+    "feline": [
+      {
+        "name": "cat",
+        "image_path": "data/images/cat.jpg"
+      },
+      {
+        "name": "lion",
+        "image_path": "data/images/lion.jpg"
+      },
+      {
+        "name": "tiger",
+        "image_path": "data/images/tiger.jpg"
+      }
+    ],
+    "canine": [
+      {
+        "name": "dog",
+        "image_path": "data/images/dog.jpg"
+      },
+      {
+        "name": "wolf",
+        "image_path": "data/images/wolf.jpg"
+      }
+    ],
+    "empty_adjective": []
+  }
+}
