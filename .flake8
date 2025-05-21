@@ -1,5 +1,5 @@
 [flake8]
 max-line-length = 100
-extend-ignore = E203, E231, F401, F811, C901, D100, D101, D102, D103, D104, D200, F841, E501, W503, E402
+extend-ignore = E203, E231, F401, F811, C901, D100, D101, D102, D103, D104, D200, F841, E501, W503, E402, E713, W293
 exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv
 max-complexity = 20

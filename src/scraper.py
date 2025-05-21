@@ -89,6 +89,10 @@ def normalize_entry(raw: str) -> str:
         small.insert_before(" ")
         small.insert_after(" ")
 
+    # Replace <br> tags with a semicolon to ensure they're treated as separators
+    for br in soup.find_all("br"):
+        br.replace_with("; ")
+
     # Get text with whitespace preserved
     text = soup.get_text()  # type: str
 
@@ -99,6 +103,54 @@ def normalize_entry(raw: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
 
     return text
+
+
+def clean_animal_name(name: str) -> str:
+    """
+    Clean up animal names by removing annotations like '(list)' and 'Also see X'.
+
+    Args:
+        name: Raw animal name that may contain annotations.
+
+    Returns:
+        Cleaned animal name.
+    """
+    # Remove '(list)' annotation
+    name = re.sub(r"\s*\(list\)", "", name)
+
+    # Remove 'Also see X' annotations
+    name = re.sub(r"\s*;\s*Also see.*", "", name)
+
+    # Remove square bracket annotations like [C], [D], etc.
+    name = re.sub(r"\s*\[[A-Za-z0-9]\]", "", name)
+
+    # Strip any remaining whitespace
+    return name.strip()
+
+
+def create_wikipedia_url(animal_name: str) -> str:
+    """
+    Generate a Wikipedia URL for an animal based on its name, following Wikipedia's URL conventions.
+
+    This function is used only as a fallback when no direct link can be found in the HTML.
+
+    Args:
+        animal_name: The name of the animal.
+
+    Returns:
+        A Wikipedia URL for the animal.
+    """
+    import urllib.parse
+
+    clean_name = clean_animal_name(animal_name)
+    if not clean_name:
+        return "https://en.wikipedia.org/wiki/"
+    # Wikipedia: only first character is capitalized, spaces to underscores, percent-encode
+    wiki_name = clean_name.replace(" ", "_")
+    if wiki_name:
+        wiki_name = wiki_name[0].upper() + wiki_name[1:]
+    wiki_name = urllib.parse.quote(wiki_name, safe="_")
+    return f"https://en.wikipedia.org/wiki/{wiki_name}"
 
 
 def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
@@ -301,20 +353,21 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if adj_lower not in result:
                         result[adj_lower] = []
 
-                    # Always prioritize the URL directly from the Wikipedia page
-                    # Only fall back to generating a URL if absolutely necessary
+                    # Always use the URL directly from the Wikipedia page if available
+                    # Only fall back to generating a URL as a last resort for animals without links
                     if page_url is None:
-                        # Log warning when falling back to generated URL
+                        # Log warning when no direct link found
                         logger.warning(
                             f"No direct link found for animal '{animal_name}', falling back to generated URL"
                         )
-                        # page_url = create_wikipedia_url(animal_name)
-                        a = 1
+                        page_url = create_wikipedia_url(animal_name)
 
-                    animal_obj = Animal(name=animal_name, page_url=page_url)
+                    # Clean the animal name before creating the Animal object
+                    clean_name = clean_animal_name(animal_name)
+                    animal_obj = Animal(name=clean_name, page_url=page_url)
 
                     # Check if this animal already exists in the list
-                    if not any(a.name == animal_name for a in result[adj_lower]):
+                    if not any(a.name == clean_name for a in result[adj_lower]):
                         result[adj_lower].append(animal_obj)
 
     logger.info(f"Extracted {len(result)} adjective-animal mappings")

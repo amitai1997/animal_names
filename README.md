@@ -24,9 +24,11 @@ The project is organized into several core components:
    - Fetches HTML from Wikipedia's "List of animal names" page
    - Parses the table to extract collateral adjectives and animal names
    - Handles multiple adjectives per cell and footnotes
+   - Uses direct Wikipedia URLs from the HTML rather than generating them
 
 2. **Downloader Component**
    - Downloads animal images concurrently using a thread pool
+   - Intelligently extracts appropriate images while filtering out Wikipedia icons and small thumbnails
    - Implements retry logic with exponential backoff
    - Creates a manifest of downloaded images
 

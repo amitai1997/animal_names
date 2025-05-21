@@ -151,14 +151,32 @@ def load_manifest(manifest_path: Path) -> Dict[str, List[Dict]]:
     # Get the adjective -> animal mapping
     adjective_to_animals_raw = parse_table(html_path)
 
-    # Transform the mapping to include image paths
+    # Create a map of animal name to adjectives for reverse lookup
+    # This helps correctly group animals under the same adjective regardless of HTML structure
+    animal_to_adjectives = {}
     for adjective, animals in adjective_to_animals_raw.items():
-        adjective_to_animals[adjective] = []
         for animal in animals:
             animal_name = animal.name
-            if animal_name in manifest:
-                adjective_to_animals[adjective].append(
-                    {"name": animal_name, "image_path": manifest[animal_name]}
-                )
+            if animal_name not in animal_to_adjectives:
+                animal_to_adjectives[animal_name] = []
+            if adjective not in animal_to_adjectives[animal_name]:
+                animal_to_adjectives[animal_name].append(adjective)
+
+    # Transform the mapping to properly group animals under each adjective
+    for animal_name, adjectives in animal_to_adjectives.items():
+        if animal_name in manifest:
+            image_path = manifest[animal_name]
+            for adjective in adjectives:
+                if adjective not in adjective_to_animals:
+                    adjective_to_animals[adjective] = []
+
+                # Check if animal is already in the list to avoid duplicates
+                if not any(
+                    a.get("name") == animal_name
+                    for a in adjective_to_animals[adjective]
+                ):
+                    adjective_to_animals[adjective].append(
+                        {"name": animal_name, "image_path": image_path}
+                    )
 
     return adjective_to_animals

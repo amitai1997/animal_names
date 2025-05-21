@@ -105,7 +105,56 @@ def extract_image_url(page_url: str) -> Optional[str]:
     Returns:
         URL of the thumbnail image or None if no image was found.
     """
-    logger.debug(f"Extracting image URL from {page_url}")
+    logger.info(f"Extracting image URL from {page_url}")
+
+    # Common Wikipedia icons and logos to exclude
+    excluded_patterns = [
+        "wiki/Special:",
+        "Wikipedia-logo",
+        "Wiki-logo",
+        "wiki-logo",
+        "wikimedia-button",
+        "Commons-logo",
+        "Wikiquote-logo",
+        "Wiktionary-logo",
+        "Wikibooks-logo",
+        "Wikinews-logo",
+        "Wikiversity-logo",
+        "Wikivoyage-logo",
+        "Edit-clear",
+        "Question_book",
+        "Red_question_icon",
+        "Portal-puzzle",
+        "Folder_Hexagonal_Icon",
+        "Symbol_support_vote",
+        "Media_Viewer",
+        "Fairytale_bookmark",
+        "Video-x-generic",
+        "P_vip",
+        "Ambox",  # Warning/note icons
+        "Icon_",  # Various icon prefixes
+        "Broom_icon",
+        "Emblem-",
+        "/Static",
+        "/static",
+        "/Pictogram",
+        "/pictogram",
+        "Special:FilePath",
+        "Disambig",
+        "Help-",
+        "Mediawiki",
+        "User_",
+        "Speaker_Icon",
+        "Magnify-clip",
+        "magnify",
+        "Information_icon",
+        "OOjs_UI_icon",
+    ]
+
+    # Minimum size for valid images (avoid tiny icons)
+    # We'll be more lenient with dimensions now
+    MIN_WIDTH = 50  # Reduced from 80
+    MIN_HEIGHT = 50  # Reduced from 80
 
     try:
         session = get_session()
@@ -119,43 +168,401 @@ def extract_image_url(page_url: str) -> Optional[str]:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Look for the first image in the infobox
+        # Debug: count total images on page for logging
+        all_images = soup.find_all("img")
+        logger.info(f"Page has {len(all_images)} total images")
+
+        # STRATEGY 1: Look for the first image in the infobox - THIS SHOULD BE THE HIGHEST PRIORITY
         infobox = soup.find("table", class_="infobox")
         if infobox:
-            img_tag = infobox.find("img")
+            img_tags = infobox.find_all("img")
+            logger.info(f"Found {len(img_tags)} images in infobox")
+
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    # Check if it's a valid size
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+
+                    # Log image dimensions for debugging
+                    logger.debug(
+                        f"Infobox image: {img_tag['src']} (w={width}, h={height})"
+                    )
+
+                    # Skip small images (likely icons)
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        logger.debug(
+                            f"Skipping infobox image due to small size: {width}x{height}"
+                        )
+                        continue
+
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+
+                    # Skip excluded patterns
+                    if any(
+                        pattern.lower() in img_src_lower
+                        for pattern in excluded_patterns
+                    ):
+                        logger.debug(
+                            f"Skipping infobox image due to pattern match: {img_url}"
+                        )
+                        continue
+
+                    # Ensure URL is absolute
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        # Handle root-relative URLs
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.info(f"Found valid image URL in infobox: {img_url}")
+                    return img_url
+
+        # STRATEGY 2: Look at full-size images in image containers/thumbs
+        # This often gets higher quality images than just img tags
+        image_containers = []
+        image_containers.extend(soup.find_all("div", class_="thumbinner"))
+        image_containers.extend(soup.find_all("div", class_="thumb"))
+        image_containers.extend(soup.find_all("a", class_="image"))
+
+        logger.info(f"Found {len(image_containers)} image containers")
+
+        for container in image_containers:
+            # Look for image inside container
+            img_tag = container.find("img")
             if img_tag and "src" in img_tag.attrs:
+                width = int(img_tag.get("width", 0))
+                height = int(img_tag.get("height", 0))
+
+                # Log image dimensions for debugging
+                logger.debug(
+                    f"Container image: {img_tag['src']} (w={width}, h={height})"
+                )
+
+                # Skip very small images (icons)
+                if width < MIN_WIDTH or height < MIN_HEIGHT:
+                    logger.debug(
+                        f"Skipping container image due to small size: {width}x{height}"
+                    )
+                    continue
+
                 img_url = img_tag["src"]
+                img_src_lower = img_url.lower()
+
+                # Skip excluded patterns
+                if any(
+                    pattern.lower() in img_src_lower for pattern in excluded_patterns
+                ):
+                    logger.debug(
+                        f"Skipping container image due to pattern match: {img_url}"
+                    )
+                    continue
+
                 # Ensure URL is absolute
                 if img_url.startswith("//"):
                     img_url = "https:" + img_url
                 elif img_url.startswith("/"):
-                    # Handle root-relative URLs
                     parsed_url = requests.utils.urlparse(page_url)
                     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
                     img_url = base_url + img_url
-                logger.debug(f"Found image URL in infobox: {img_url}")
+
+                # Look for larger version (Wikipedia often has thumb URLs)
+                # If URL contains /thumb/ directory, we can try to get full version
+                if "/thumb/" in img_url:
+                    try:
+                        # Wikipedia thumbnail URLs typically have format: /thumb/path/to/file/width-filename.ext
+                        # To get the full size, we remove the /thumb/ part and the width-filename.ext part
+                        parts = img_url.split("/")
+                        if len(parts) >= 4:
+                            # Remove the last part (width-filename.ext)
+                            img_url_full = "/".join(parts[:-1])
+                            # Remove the 'thumb' directory
+                            img_url_full = img_url_full.replace("/thumb/", "/")
+                            logger.info(f"Found full-size image URL: {img_url_full}")
+                            return img_url_full
+                    except Exception as e:
+                        logger.debug(f"Error processing thumb URL: {e}")
+
+                logger.info(f"Found valid image URL in container: {img_url}")
                 return img_url
 
-        # Fallback: look for the first image in the article
-        first_img = soup.find("img")
-        if first_img and "src" in first_img.attrs:
-            img_url = first_img["src"]
+        # STRATEGY 3: Look for the right column/sidebar images
+        # (often labeled as 'tright' or 'infobox' classes)
+        sidebar_containers = soup.find_all(
+            ["div", "td", "table"], class_=["tright", "infobox_v2", "sidebar"]
+        )
+        for container in sidebar_containers:
+            img_tags = container.find_all("img")
+            logger.info(f"Found {len(img_tags)} images in sidebar container")
+
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+
+                    logger.debug(
+                        f"Sidebar image: {img_tag['src']} (w={width}, h={height})"
+                    )
+
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        logger.debug(
+                            f"Skipping sidebar image due to small size: {width}x{height}"
+                        )
+                        continue
+
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+
+                    if any(
+                        pattern.lower() in img_src_lower
+                        for pattern in excluded_patterns
+                    ):
+                        logger.debug(
+                            f"Skipping sidebar image due to pattern match: {img_url}"
+                        )
+                        continue
+
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.info(f"Found valid image URL in sidebar: {img_url}")
+                    return img_url
+
+        # STRATEGY 4: Look in the lead section (first paragraph) for images
+        content_div = soup.find("div", id="mw-content-text")
+        if content_div:
+            # Find the first few paragraphs
+            lead_section = content_div.find_all(
+                ["p", "div", "figure"], limit=10
+            )  # Increased from 5
+            logger.info(f"Scanning {len(lead_section)} lead section elements")
+
+            for element in lead_section:
+                img_tags = element.find_all("img")
+                for img_tag in img_tags:
+                    if "src" in img_tag.attrs:
+                        # Check if it's a valid size
+                        width = int(img_tag.get("width", 0))
+                        height = int(img_tag.get("height", 0))
+
+                        logger.debug(
+                            f"Lead section image: {img_tag['src']} (w={width}, h={height})"
+                        )
+
+                        # Skip small images (likely icons)
+                        if width < MIN_WIDTH or height < MIN_HEIGHT:
+                            logger.debug(
+                                f"Skipping lead section image due to small size: {width}x{height}"
+                            )
+                            continue
+
+                        img_url = img_tag["src"]
+                        img_src_lower = img_url.lower()
+
+                        # Skip excluded patterns
+                        if any(
+                            pattern.lower() in img_src_lower
+                            for pattern in excluded_patterns
+                        ):
+                            logger.debug(
+                                f"Skipping lead section image due to pattern match: {img_url}"
+                            )
+                            continue
+
+                        # Ensure URL is absolute
+                        if img_url.startswith("//"):
+                            img_url = "https:" + img_url
+                        elif img_url.startswith("/"):
+                            # Handle root-relative URLs
+                            parsed_url = requests.utils.urlparse(page_url)
+                            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                            img_url = base_url + img_url
+                        logger.info(f"Found valid image URL in lead section: {img_url}")
+                        return img_url
+
+        # STRATEGY 5: Look for image galleries
+        galleries = soup.find_all("div", class_=["thumb", "gallery", "thumbinner"])
+        logger.info(f"Found {len(galleries)} gallery elements")
+
+        for gallery in galleries:
+            img_tags = gallery.find_all("img")
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    # Check if it's a valid size
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+
+                    logger.debug(
+                        f"Gallery image: {img_tag['src']} (w={width}, h={height})"
+                    )
+
+                    # Skip small images (likely icons)
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        logger.debug(
+                            f"Skipping gallery image due to small size: {width}x{height})"
+                        )
+                        continue
+
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+
+                    # Skip excluded patterns
+                    if any(
+                        pattern.lower() in img_src_lower
+                        for pattern in excluded_patterns
+                    ):
+                        logger.debug(
+                            f"Skipping gallery image due to pattern match: {img_url}"
+                        )
+                        continue
+
+                    # Ensure URL is absolute
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        # Handle root-relative URLs
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.info(f"Found valid image URL in gallery: {img_url}")
+                    return img_url
+
+        # STRATEGY 6: Look for any images in figure or figcaption elements
+        figures = soup.find_all(["figure", "figcaption"])
+        logger.info(f"Found {len(figures)} figure elements")
+
+        for figure in figures:
+            img_tags = figure.find_all("img")
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+
+                    logger.debug(
+                        f"Figure image: {img_tag['src']} (w={width}, h={height})"
+                    )
+
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        logger.debug(
+                            f"Skipping figure image due to small size: {width}x{height}"
+                        )
+                        continue
+
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+
+                    if any(
+                        pattern.lower() in img_src_lower
+                        for pattern in excluded_patterns
+                    ):
+                        logger.debug(
+                            f"Skipping figure image due to pattern match: {img_url}"
+                        )
+                        continue
+
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.info(f"Found valid image URL in figure: {img_url}")
+                    return img_url
+
+        # STRATEGY 7: Last resort - check any remaining images with sufficient size
+        # Be less strict with fallback images
+        logger.info("Trying fallback strategy with any large enough images")
+
+        # Collect all images first and sort by size (largest first)
+        potential_images = []
+
+        for img_tag in all_images:
+            if "src" in img_tag.attrs:
+                width = int(img_tag.get("width", 0))
+                height = int(img_tag.get("height", 0))
+                area = width * height
+
+                # Skip very small images
+                if width < MIN_WIDTH or height < MIN_HEIGHT:
+                    continue
+
+                img_url = img_tag["src"]
+                img_src_lower = img_url.lower()
+
+                # Skip excluded patterns
+                if any(
+                    pattern.lower() in img_src_lower for pattern in excluded_patterns
+                ):
+                    continue
+
+                # Add to potential images list with size info for sorting
+                potential_images.append((img_url, area, width, height))
+
+        # Sort by area (largest first)
+        potential_images.sort(key=lambda x: x[1], reverse=True)
+
+        # Log the top candidates
+        for i, (url, area, width, height) in enumerate(potential_images[:5]):
+            logger.debug(f"Candidate {i+1}: {url} (w={width}, h={height}, area={area})")
+
+        # Use the largest image if available
+        if potential_images:
+            img_url = potential_images[0][0]
+
             # Ensure URL is absolute
             if img_url.startswith("//"):
                 img_url = "https:" + img_url
             elif img_url.startswith("/"):
-                # Handle root-relative URLs
                 parsed_url = requests.utils.urlparse(page_url)
                 base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
                 img_url = base_url + img_url
-            logger.debug(f"Found first image URL in article: {img_url}")
+
+            logger.info(f"Found valid image URL as fallback: {img_url}")
             return img_url
 
-        logger.warning(f"No image found for {page_url}")
+        # If we get here, we couldn't find any suitable image
+        logger.warning(f"No suitable image found for {page_url}")
+
+        # Last-resort option: try Commons category search
+        # Extract the animal name from the URL
+        animal_name = page_url.split("/")[-1].replace("_", " ")
+        logger.info(f"Trying Commons search for '{animal_name}'")
+
+        # Construct a link to Wikimedia Commons search
+        commons_url = f"https://commons.wikimedia.org/w/index.php?search={animal_name}&title=Special:MediaSearch&type=image"
+        try:
+            commons_response = session.get(
+                commons_url, headers=headers, timeout=(5, 10)
+            )
+            commons_response.raise_for_status()
+            commons_soup = BeautifulSoup(commons_response.text, "html.parser")
+
+            # Look for search result images
+            result_images = commons_soup.find_all("img", class_="sdms-image")
+            if result_images and len(result_images) > 0:
+                for img in result_images:
+                    if "src" in img.attrs:
+                        img_url = img["src"]
+                        if img_url.startswith("//"):
+                            img_url = "https:" + img_url
+
+                        logger.info(f"Found Commons search result image: {img_url}")
+                        return img_url
+        except Exception as e:
+            logger.warning(f"Failed to search Commons: {e}")
+
         return None
 
     except requests.RequestException as e:
         logger.error(f"Error fetching image URL from {page_url}: {e}")
+        return None
+    except (ValueError, AttributeError) as e:
+        logger.error(f"Error parsing image data from {page_url}: {e}")
         return None
 
 
@@ -277,10 +684,22 @@ def download_images(
         logger.warning(f"Could not check disk space: {e}")
 
     # Prepare placeholder path
-    if placeholder_path is None:
-        placeholder_path = Path(__file__).parent / "assets" / "placeholder.jpg"
-        if not placeholder_path.exists():
-            logger.warning(f"Placeholder image not found at {placeholder_path}")
+    if not placeholder_path:
+        # Try multiple possible locations for the placeholder image
+        possible_paths = [
+            Path(__file__).parent / "assets" / "placeholder.jpg",
+            Path(__file__).parent.parent / "src" / "assets" / "placeholder.jpg",
+            Path.cwd() / "src" / "assets" / "placeholder.jpg",
+        ]
+
+        # Use the first path that exists
+        for path in possible_paths:
+            if path.exists():
+                placeholder_path = path
+                break
+        # flake8 E713 false positive workaround: use 'placeholder_path is None'
+        if placeholder_path is None:  # noqa: E713
+            logger.warning(f"Placeholder image not found in any of: {possible_paths}")
 
     # Flatten the mapping to get a list of all animals
     all_animals = []
@@ -345,11 +764,17 @@ def download_images(
             if path:
                 manifest_entries[name] = path
 
+    # Make sure we update ALL animal objects across all adjectives
+    # This is important since the same animal may appear under multiple adjectives
+    animal_paths = {}
+    for name, path in manifest_entries.items():
+        animal_paths[name] = path
+
     # Update the original animal objects in the mapping
     for adjective, animals in mapping.items():
         for animal in animals:
-            if animal.name in manifest_entries:
-                animal.image_path = manifest_entries[animal.name]
+            if animal.name in animal_paths:
+                animal.image_path = animal_paths[animal.name]
 
     # Create and return manifest
     manifest = Manifest(entries=manifest_entries)

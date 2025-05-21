@@ -109,7 +109,7 @@ def test_extract_image_url(mock_get_session, mock_responses):
         <body>
             <table class="infobox">
                 <tr>
-                    <td><img src="//example.com/cat.jpg" alt="Cat"></td>
+                    <td><img src="//example.com/cat.jpg" width="220" height="180" alt="Cat"></td>
                 </tr>
             </table>
         </body>
@@ -123,7 +123,7 @@ def test_extract_image_url(mock_get_session, mock_responses):
     <html>
         <body>
             <p>Some text</p>
-            <img src="//example.com/dog.jpg" alt="Dog">
+            <img src="//example.com/dog.jpg" width="250" height="200" alt="Dog">
         </body>
     </html>
     """
@@ -366,3 +366,100 @@ def test_downloader_integration():
         # Cleanup
         if temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@mock.patch("src.downloader.extract_image_url")
+@mock.patch("src.downloader.fetch_with_retries")
+def test_download_images_duplicate_animals(
+    mock_fetch_with_retries,
+    mock_extract_image_url,
+    temp_image_dir,
+    sample_image_path,
+):
+    """Test downloading images for animals that appear under multiple adjectives."""
+    # Setup mock responses
+    mock_extract_image_url.side_effect = [
+        "https://example.com/shark.jpg",  # Success
+    ]
+
+    mock_fetch_with_retries.side_effect = [True]  # Shark - success
+
+    # Create test data with the same animal (Shark) under multiple adjectives
+    animals = {
+        "squaloid": [
+            Animal(name="Shark", page_url="https://en.wikipedia.org/wiki/Shark")
+        ],
+        "selachian": [
+            Animal(name="Shark", page_url="https://en.wikipedia.org/wiki/Shark")
+        ],
+    }
+
+    # Run download_images function
+    manifest = download_images(
+        animals,
+        temp_image_dir,
+        workers=1,
+        retries=1,
+        placeholder_path=sample_image_path,
+    )
+
+    # Check the manifest
+    assert isinstance(manifest, Manifest)
+    assert len(manifest.entries) == 1  # Just the shark
+    assert "Shark" in manifest.entries
+
+    # THIS IS THE KEY TEST: Check that image paths were updated in BOTH instances
+    # of the Shark animal
+    assert animals["squaloid"][0].image_path is not None
+    assert animals["selachian"][0].image_path is not None
+
+    # Both instances should have the same image path
+    assert animals["squaloid"][0].image_path == animals["selachian"][0].image_path
+
+
+@mock.patch("src.downloader.get_session")
+def test_extract_image_url_filtering_and_size(mock_get_session):
+    """Test the enhanced image extraction filtering by size and pattern exclusion."""
+    # Setup mock response with multiple images including good and bad ones
+    mock_response = mock.Mock()
+    mock_response.text = """
+    <html>
+        <body>
+            <!-- Wikipedia logos and small icons that should be filtered out -->
+            <img src="//en.wikipedia.org/static/images/Wikipedia-logo.png" width="50" height="50">
+            <img src="//en.wikipedia.org/static/images/Video-x-generic.svg" width="20" height="20">
+            <!-- Good images in infobox -->
+            <table class="infobox">
+                <tr>
+                    <td>
+                        <img src="//example.com/small-icon.jpg" width="30" height="30" alt="Small Icon">
+                        <img src="//example.com/actual-animal.jpg" width="220" height="180" alt="Animal Photo">
+                    </td>
+                </tr>
+            </table>
+            <!-- Images in article body -->
+            <div id="mw-content-text">
+                <p>First paragraph with <img src="//example.com/tiny-decorative.jpg" width="15" height="15"> tiny image.</p>
+                <p>Second paragraph with <img src="//example.com/good-body-image.jpg" width="250" height="200"> good image.</p>
+                <div class="thumb">
+                    <img src="//example.com/gallery-image.jpg" width="300" height="250">
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    mock_response.raise_for_status = mock.Mock()
+
+    # Setup mock session
+    mock_session = mock.Mock()
+    mock_session.get.return_value = mock_response
+    mock_get_session.return_value = mock_session
+
+    # Test image extraction - should get the 220x180 image from infobox (not the small icon)
+    result = extract_image_url("https://en.wikipedia.org/wiki/Animal")
+    assert result == "https://example.com/actual-animal.jpg"
+
+    # Verify our mock was called correctly
+    mock_session.get.assert_called_once_with(
+        "https://en.wikipedia.org/wiki/Animal", headers=mock.ANY, timeout=mock.ANY
+    )

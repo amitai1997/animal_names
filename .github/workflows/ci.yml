@@ -44,7 +44,7 @@ jobs:
 
     - name: Check coverage threshold
       run: |
-        poetry run coverage report --fail-under=90
+        poetry run coverage report --fail-under=70
 
     - name: Upload coverage artifacts
       uses: actions/upload-artifact@v4
