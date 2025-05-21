@@ -428,7 +428,6 @@ def test_extract_image_url_filtering_and_size(mock_get_session):
             <!-- Wikipedia logos and small icons that should be filtered out -->
             <img src="//en.wikipedia.org/static/images/Wikipedia-logo.png" width="50" height="50">
             <img src="//en.wikipedia.org/static/images/Video-x-generic.svg" width="20" height="20">
-            
             <!-- Good images in infobox -->
             <table class="infobox">
                 <tr>
@@ -438,7 +437,6 @@ def test_extract_image_url_filtering_and_size(mock_get_session):
                     </td>
                 </tr>
             </table>
-            
             <!-- Images in article body -->
             <div id="mw-content-text">
                 <p>First paragraph with <img src="//example.com/tiny-decorative.jpg" width="15" height="15"> tiny image.</p>
@@ -460,10 +458,8 @@ def test_extract_image_url_filtering_and_size(mock_get_session):
     # Test image extraction - should get the 220x180 image from infobox (not the small icon)
     result = extract_image_url("https://en.wikipedia.org/wiki/Animal")
     assert result == "https://example.com/actual-animal.jpg"
-    
+
     # Verify our mock was called correctly
     mock_session.get.assert_called_once_with(
-        "https://en.wikipedia.org/wiki/Animal",
-        headers=mock.ANY,
-        timeout=mock.ANY
+        "https://en.wikipedia.org/wiki/Animal", headers=mock.ANY, timeout=mock.ANY
     )
