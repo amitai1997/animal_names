@@ -53,33 +53,19 @@ python -m src.cli --output report.html
 
 ### CLI Output
 
-When running the application, each animal with an available image will be shown as a clickable local link to its photo. For example:
+When running the application, the console output will show only the list of collateral adjectives and their animals (no links, no extra formatting). For example:
 
 ```
 Adjective: feline
-  - <a href="./data/images/cat.jpg">Cat</a>
-  - <a href="./data/images/cheetah.jpg">Cheetah</a>
-  - <a href="./data/images/cougar.jpg">Cougar</a>
-  - <a href="./data/images/bobcat.jpg">Bobcat</a>
-  - <a href="./data/images/margay.jpg">Margay</a>
+  - cat
+  - Bobcat
+  - Cat
+  - Cheetah
+  - Cougar
+  - Margay
 ```
 
-If an animal does not have an image, only its name will be shown (without a link).
-
-No additional logs or information will be printed.
-
-Example output:
-
-```
-Adjective: Aquatic
-  - <a href="./data/images/fish.jpg">Fish</a>
-  - <a href="./data/images/dolphin.jpg">Dolphin</a>
-  ...
-Adjective: Feline
-  - <a href="./data/images/cat.jpg">Cat</a>
-  - <a href="./data/images/lion.jpg">Lion</a>
-  ...
-```
+No additional logs or information will be printed (if you see logs, you may need to further suppress logging in the code).
 
 ## Docker Usage
 
