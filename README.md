@@ -140,7 +140,7 @@ This project follows these quality standards:
 - PEP 8 compliant code style (enforced by Flake8)
 - Black code formatting with 88 character line limit
 - Type annotations for all functions and classes
-- Comprehensive test coverage (>90%)
+- Comprehensive test coverage (>60%)
 
 ```bash
 # Format code
@@ -157,7 +157,7 @@ python -m isort .
 
 This project uses GitHub Actions for continuous integration:
 - Automatic testing on each push to main or PR
-- Coverage enforcement (minimum 90%)
+- Coverage enforcement (minimum 60%)
 - Code quality checks (Flake8 linting and Black formatting)
 
 ## License
