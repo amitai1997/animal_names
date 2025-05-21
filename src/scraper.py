@@ -130,7 +130,9 @@ def clean_animal_name(name: str) -> str:
 
 def create_wikipedia_url(animal_name: str) -> str:
     """
-    Generate a Wikipedia URL for an animal based on its name.
+    Generate a Wikipedia URL for an animal based on its name, following Wikipedia's URL conventions.
+    
+    This function is used only as a fallback when no direct link can be found in the HTML.
 
     Args:
         animal_name: The name of the animal.
@@ -138,12 +140,16 @@ def create_wikipedia_url(animal_name: str) -> str:
     Returns:
         A Wikipedia URL for the animal.
     """
-    # Clean the name first
+    import urllib.parse
+
     clean_name = clean_animal_name(animal_name)
-
-    # Replace spaces with underscores and capitalize each word
-    wiki_name = "_".join(word.capitalize() for word in clean_name.split())
-
+    if not clean_name:
+        return "https://en.wikipedia.org/wiki/"
+    # Wikipedia: only first character is capitalized, spaces to underscores, percent-encode
+    wiki_name = clean_name.replace(" ", "_")
+    if wiki_name:
+        wiki_name = wiki_name[0].upper() + wiki_name[1:]
+    wiki_name = urllib.parse.quote(wiki_name, safe="_")
     return f"https://en.wikipedia.org/wiki/{wiki_name}"
 
 
@@ -347,14 +353,13 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                     if adj_lower not in result:
                         result[adj_lower] = []
 
-                    # Always prioritize the URL directly from the Wikipedia page
-                    # Only fall back to generating a URL if absolutely necessary
+                    # Always use the URL directly from the Wikipedia page if available
+                    # Only fall back to generating a URL as a last resort for animals without links
                     if page_url is None:
-                        # Log warning when falling back to generated URL
+                        # Log warning when no direct link found
                         logger.warning(
                             f"No direct link found for animal '{animal_name}', falling back to generated URL"
                         )
-                        # page_url = create_wikipedia_url(animal_name)
                         page_url = create_wikipedia_url(animal_name)
 
                     # Clean the animal name before creating the Animal object
