@@ -47,33 +47,19 @@ cd animal_names
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the application
+# Run the application (basic usage)
 python -m src.cli --output report.html
 ```
 
 ### CLI Options
 
+Only the output path is required:
+
 ```bash
-# Basic usage
 python -m src.cli --output report.html
-
-# Skip downloading images and use existing ones
-python -m src.cli --output report.html --skip-download
-
-# Specify custom directories
-python -m src.cli --output report.html \
-  --image-dir=./data/images \
-  --manifest=./data/manifest.json \
-  --html-snapshot=./data/raw_snapshot.html \
-  --static-dir=./static \
-  --template-dir=./templates
-
-# Configure download parameters
-python -m src.cli --output report.html --workers=16 --retries=5
-
-# Control console output
-python -m src.cli --output report.html --verbose
 ```
+
+This will generate an HTML report at the specified location. All images and data will be stored in the default data directories.
 
 ## Docker Usage
 
@@ -115,7 +101,7 @@ on macOS, or double-click the file in your file explorer.
 You can override the default command. For example:
 
 ```bash
-docker run --rm -v $(pwd):/app animal-names python -m src.cli --output report.html --skip-download --verbose
+docker run --rm -v $(pwd):/app animal-names python -m src.cli --output report.html
 ```
 
 ### Run Tests in Docker
