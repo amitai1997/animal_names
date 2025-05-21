@@ -51,20 +51,6 @@ pip install -r requirements.txt
 python -m src.cli --output report.html
 ```
 
-### CLI Output
-
-When running the application, the console output will show only the list of collateral adjectives and their animals (no links, no extra formatting). For example:
-
-```
-Adjective: feline
-  - cat
-  - Bobcat
-  - Cat
-  - Cheetah
-  - Cougar
-  - Margay
-```
-
 No additional logs or information will be printed (if you see logs, you may need to further suppress logging in the code).
 
 ## Docker Usage
@@ -75,12 +61,6 @@ You can build and run this project using Docker. This ensures a consistent envir
 
 ```bash
 docker build -t animal-names .
-```
-
-### Run the CLI to Generate the Report
-
-```bash
-docker run --rm -v $(pwd):/app animal-names
 ```
 
 This will generate `report.html` and a `static/` directory in your project root.
