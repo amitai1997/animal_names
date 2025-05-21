@@ -131,7 +131,7 @@ def clean_animal_name(name: str) -> str:
 def create_wikipedia_url(animal_name: str) -> str:
     """
     Generate a Wikipedia URL for an animal based on its name, following Wikipedia's URL conventions.
-    
+
     This function is used only as a fallback when no direct link can be found in the HTML.
 
     Args:
