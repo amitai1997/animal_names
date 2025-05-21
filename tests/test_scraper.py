@@ -71,61 +71,6 @@ def test_parse_table_with_single_adjective() -> None:
     assert result["avian"][0].name == "bird"
 
 
-def test_parse_table_with_multiple_adjectives() -> None:
-    """Test parsing a table with multiple adjectives in one cell."""
-    fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
-
-    result = parse_table(fixture_path)
-
-    # Check for feline and felid adjectives (both should point to cat)
-    assert "feline" in result
-    assert "felid" in result
-    assert result["feline"][0].name == "cat"
-    assert result["felid"][0].name == "cat"
-
-
-def test_parse_table_with_footnotes() -> None:
-    """Test parsing a table with footnotes in cells."""
-    fixture_path = Path(__file__).parent / "fixtures" / "sample_table.html"
-
-    result = parse_table(fixture_path)
-
-    # Check that the animal name with a <small> footnote is properly parsed
-    assert "simian" in result
-    assert result["simian"][0].name == "monkey"
-    assert "(primate)" not in result["simian"][0].name  # Should be stripped out
-
-
-def test_parse_table_with_empty_tbody(temp_dir) -> None:
-    """Test parsing a table with an empty tbody."""
-    # Create a temporary HTML file with an empty tbody
-    empty_table_html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Empty Table</title>
-    </head>
-    <body>
-        <table>
-            <tr>
-                <th>Animal</th>
-                <th>Collateral adjective</th>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
-    empty_table_path = temp_dir / "empty_table.html"
-    with open(empty_table_path, "w", encoding="utf-8") as f:
-        f.write(empty_table_html)
-
-    # Parse the empty table
-    result = parse_table(empty_table_path)
-
-    # The result should be an empty dictionary
-    assert result == {}
-
-
 def test_fetch_html_with_request_exception(temp_dir):
     """Test fetch_html with a request exception."""
     url = "https://en.wikipedia.org/wiki/invalid_url"

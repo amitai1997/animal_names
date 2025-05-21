@@ -8,7 +8,7 @@ and copying static assets to the output directory.
 import json
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from jinja2 import Environment, FileSystemLoader, Template
 
