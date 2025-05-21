@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed parsing of collateral adjectives separated by `<br>` tags in the Wikipedia table. Now properly handles cases like "caudatan<br>salamandrine" for Salamander animals by treating `<br>` tags as separators similar to commas and semicolons.
 - Fixed issue with images not showing for animals appearing under multiple collateral adjectives (e.g., "Shark" under both "squaloid" and "selachian"). All instances of the same animal now correctly display their images.
+- Fixed incorrect grouping of animals under the same adjective in the HTML report. Animals with the same collateral adjective (like Duck, Goose, and Mallard all having "anatine") now appear together on the same page/section.
