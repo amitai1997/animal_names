@@ -28,6 +28,7 @@ The project is organized into several core components:
 
 2. **Downloader Component**
    - Downloads animal images concurrently using a thread pool
+   - Intelligently extracts appropriate images while filtering out Wikipedia icons and small thumbnails
    - Implements retry logic with exponential backoff
    - Creates a manifest of downloaded images
 

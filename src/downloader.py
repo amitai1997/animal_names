@@ -107,6 +107,38 @@ def extract_image_url(page_url: str) -> Optional[str]:
     """
     logger.debug(f"Extracting image URL from {page_url}")
 
+    # Common Wikipedia icons and logos to exclude
+    excluded_patterns = [
+        "wiki/Special:", 
+        "Wikipedia-logo",
+        "wikimedia-button",
+        "Commons-logo",
+        "Wikiquote-logo",
+        "Wiktionary-logo",
+        "Wikibooks-logo",
+        "Wikinews-logo",
+        "Wikiversity-logo",
+        "Wikivoyage-logo",
+        "Edit-clear",
+        "Question_book",
+        "Folder_Hexagonal_Icon",
+        "Symbol_support_vote",
+        "Media_Viewer",
+        "Fairytale_bookmark",
+        "Video-x-generic",
+        "P_vip",
+        "Ambox",  # Warning/note icons
+        "Broom_icon",
+        "Emblem-",
+        "/Static",
+        "/Pictogram",
+        "Special:FilePath"
+    ]
+
+    # Minimum size for valid images (avoid tiny icons)
+    MIN_WIDTH = 80
+    MIN_HEIGHT = 80
+
     try:
         session = get_session()
         headers = {
@@ -119,43 +151,141 @@ def extract_image_url(page_url: str) -> Optional[str]:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Look for the first image in the infobox
+        # STRATEGY 1: Look for the first image in the infobox (most reliable)
         infobox = soup.find("table", class_="infobox")
         if infobox:
-            img_tag = infobox.find("img")
-            if img_tag and "src" in img_tag.attrs:
-                img_url = img_tag["src"]
-                # Ensure URL is absolute
-                if img_url.startswith("//"):
-                    img_url = "https:" + img_url
-                elif img_url.startswith("/"):
-                    # Handle root-relative URLs
-                    parsed_url = requests.utils.urlparse(page_url)
-                    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-                    img_url = base_url + img_url
-                logger.debug(f"Found image URL in infobox: {img_url}")
-                return img_url
+            img_tags = infobox.find_all("img")
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    # Check if it's a valid size
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+                    
+                    # Skip small images (likely icons)
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        continue
+                        
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+                    
+                    # Skip excluded patterns
+                    if any(pattern.lower() in img_src_lower for pattern in excluded_patterns):
+                        continue
+                        
+                    # Ensure URL is absolute
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        # Handle root-relative URLs
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.debug(f"Found valid image URL in infobox: {img_url}")
+                    return img_url
 
-        # Fallback: look for the first image in the article
-        first_img = soup.find("img")
-        if first_img and "src" in first_img.attrs:
-            img_url = first_img["src"]
-            # Ensure URL is absolute
-            if img_url.startswith("//"):
-                img_url = "https:" + img_url
-            elif img_url.startswith("/"):
-                # Handle root-relative URLs
-                parsed_url = requests.utils.urlparse(page_url)
-                base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-                img_url = base_url + img_url
-            logger.debug(f"Found first image URL in article: {img_url}")
-            return img_url
+        # STRATEGY 2: Look in the lead section (first paragraph) for images
+        content_div = soup.find("div", id="mw-content-text")
+        if content_div:
+            # Find the first few paragraphs
+            lead_section = content_div.find_all(["p", "div", "figure"], limit=5)
+            for element in lead_section:
+                img_tags = element.find_all("img")
+                for img_tag in img_tags:
+                    if "src" in img_tag.attrs:
+                        # Check if it's a valid size
+                        width = int(img_tag.get("width", 0))
+                        height = int(img_tag.get("height", 0))
+                        
+                        # Skip small images (likely icons)
+                        if width < MIN_WIDTH or height < MIN_HEIGHT:
+                            continue
+                            
+                        img_url = img_tag["src"]
+                        img_src_lower = img_url.lower()
+                        
+                        # Skip excluded patterns
+                        if any(pattern.lower() in img_src_lower for pattern in excluded_patterns):
+                            continue
+                            
+                        # Ensure URL is absolute
+                        if img_url.startswith("//"):
+                            img_url = "https:" + img_url
+                        elif img_url.startswith("/"):
+                            # Handle root-relative URLs
+                            parsed_url = requests.utils.urlparse(page_url)
+                            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                            img_url = base_url + img_url
+                        logger.debug(f"Found valid image URL in lead section: {img_url}")
+                        return img_url
 
-        logger.warning(f"No image found for {page_url}")
+        # STRATEGY 3: Look for image galleries
+        galleries = soup.find_all("div", class_=["thumb", "gallery"])
+        for gallery in galleries:
+            img_tags = gallery.find_all("img")
+            for img_tag in img_tags:
+                if "src" in img_tag.attrs:
+                    # Check if it's a valid size
+                    width = int(img_tag.get("width", 0))
+                    height = int(img_tag.get("height", 0))
+                    
+                    # Skip small images (likely icons)
+                    if width < MIN_WIDTH or height < MIN_HEIGHT:
+                        continue
+                        
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+                    
+                    # Skip excluded patterns
+                    if any(pattern.lower() in img_src_lower for pattern in excluded_patterns):
+                        continue
+                        
+                    # Ensure URL is absolute
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        # Handle root-relative URLs
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.debug(f"Found valid image URL in gallery: {img_url}")
+                    return img_url
+                    
+        # FALLBACK: If nothing else worked, look for larger images anywhere
+        all_imgs = soup.find_all("img")
+        for img_tag in all_imgs:
+            if "src" in img_tag.attrs:
+                # Check if it's a valid size
+                width = int(img_tag.get("width", 0))
+                height = int(img_tag.get("height", 0))
+                
+                # Only accept larger images to avoid icons
+                if width >= MIN_WIDTH * 2 and height >= MIN_HEIGHT * 2:
+                    img_url = img_tag["src"]
+                    img_src_lower = img_url.lower()
+                    
+                    # Skip excluded patterns
+                    if any(pattern.lower() in img_src_lower for pattern in excluded_patterns):
+                        continue
+                        
+                    # Ensure URL is absolute
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        # Handle root-relative URLs
+                        parsed_url = requests.utils.urlparse(page_url)
+                        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+                        img_url = base_url + img_url
+                    logger.debug(f"Found valid image URL as fallback: {img_url}")
+                    return img_url
+
+        logger.warning(f"No suitable image found for {page_url}")
         return None
 
     except requests.RequestException as e:
         logger.error(f"Error fetching image URL from {page_url}: {e}")
+        return None
+    except (ValueError, AttributeError) as e:
+        logger.error(f"Error parsing image data from {page_url}: {e}")
         return None
 
 
