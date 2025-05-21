@@ -366,3 +366,52 @@ def test_downloader_integration():
         # Cleanup
         if temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@mock.patch("src.downloader.extract_image_url")
+@mock.patch("src.downloader.fetch_with_retries")
+def test_download_images_duplicate_animals(
+    mock_fetch_with_retries,
+    mock_extract_image_url,
+    temp_image_dir,
+    sample_image_path,
+):
+    """Test downloading images for animals that appear under multiple adjectives."""
+    # Setup mock responses
+    mock_extract_image_url.side_effect = [
+        "https://example.com/shark.jpg",  # Success
+    ]
+
+    mock_fetch_with_retries.side_effect = [True]  # Shark - success
+
+    # Create test data with the same animal (Shark) under multiple adjectives
+    animals = {
+        "squaloid": [
+            Animal(name="Shark", page_url="https://en.wikipedia.org/wiki/Shark")
+        ],
+        "selachian": [
+            Animal(name="Shark", page_url="https://en.wikipedia.org/wiki/Shark")
+        ],
+    }
+
+    # Run download_images function
+    manifest = download_images(
+        animals,
+        temp_image_dir,
+        workers=1,
+        retries=1,
+        placeholder_path=sample_image_path,
+    )
+
+    # Check the manifest
+    assert isinstance(manifest, Manifest)
+    assert len(manifest.entries) == 1  # Just the shark
+    assert "Shark" in manifest.entries
+
+    # THIS IS THE KEY TEST: Check that image paths were updated in BOTH instances
+    # of the Shark animal
+    assert animals["squaloid"][0].image_path is not None
+    assert animals["selachian"][0].image_path is not None
+
+    # Both instances should have the same image path
+    assert animals["squaloid"][0].image_path == animals["selachian"][0].image_path

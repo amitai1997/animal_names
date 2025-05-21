@@ -345,11 +345,17 @@ def download_images(
             if path:
                 manifest_entries[name] = path
 
+    # Make sure we update ALL animal objects across all adjectives
+    # This is important since the same animal may appear under multiple adjectives
+    animal_paths = {}
+    for name, path in manifest_entries.items():
+        animal_paths[name] = path
+
     # Update the original animal objects in the mapping
     for adjective, animals in mapping.items():
         for animal in animals:
-            if animal.name in manifest_entries:
-                animal.image_path = manifest_entries[animal.name]
+            if animal.name in animal_paths:
+                animal.image_path = animal_paths[animal.name]
 
     # Create and return manifest
     manifest = Manifest(entries=manifest_entries)
