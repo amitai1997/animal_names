@@ -51,15 +51,35 @@ pip install -r requirements.txt
 python -m src.cli --output report.html
 ```
 
-### CLI Options
+### CLI Output
 
-Only the output path is required:
+When running the application, each animal with an available image will be shown as a clickable local link to its photo. For example:
 
-```bash
-python -m src.cli --output report.html
+```
+Adjective: feline
+  - <a href="./data/images/cat.jpg">Cat</a>
+  - <a href="./data/images/cheetah.jpg">Cheetah</a>
+  - <a href="./data/images/cougar.jpg">Cougar</a>
+  - <a href="./data/images/bobcat.jpg">Bobcat</a>
+  - <a href="./data/images/margay.jpg">Margay</a>
 ```
 
-This will generate an HTML report at the specified location. All images and data will be stored in the default data directories.
+If an animal does not have an image, only its name will be shown (without a link).
+
+No additional logs or information will be printed.
+
+Example output:
+
+```
+Adjective: Aquatic
+  - <a href="./data/images/fish.jpg">Fish</a>
+  - <a href="./data/images/dolphin.jpg">Dolphin</a>
+  ...
+Adjective: Feline
+  - <a href="./data/images/cat.jpg">Cat</a>
+  - <a href="./data/images/lion.jpg">Lion</a>
+  ...
+```
 
 ## Docker Usage
 

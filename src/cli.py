@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Simplified command-line interface for the animal_names project (basic usage only)."""
 import argparse
+import logging
 import sys
 import time
 from pathlib import Path
@@ -34,6 +35,16 @@ def main() -> int:
     """Execute the main CLI program (basic usage only)."""
     start_time = time.time()
     args = parse_args()
+
+    # Disable all logging from imported modules
+    logging.getLogger().handlers.clear()
+    logging.basicConfig(level=logging.CRITICAL)
+    for logger_name in logging.root.manager.loggerDict:
+        logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+    # Also disable warnings from the 'warnings' module
+    import warnings
+
+    warnings.filterwarnings("ignore")
 
     # Set up basic paths
     image_dir = Path("./data/images")
@@ -73,8 +84,12 @@ def main() -> int:
     generate_report(adjective_to_animals, template, args.output)
     copy_static_assets(static_dir, args.output.parent)
 
-    elapsed_time = time.time() - start_time
-    print(f"HTML report generated at {args.output} in {elapsed_time:.2f} seconds.")
+    # Print only the required output: adjectives and their animals (no links)
+    for adjective, animals in sorted(adjective_to_animals.items()):
+        print(f"Adjective: {adjective}")
+        for animal in animals:
+            animal_name = animal.get("name", "")
+            print(f" - {animal_name}")
     return 0
 
 
