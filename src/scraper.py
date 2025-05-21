@@ -105,6 +105,26 @@ def normalize_entry(raw: str) -> str:
     return text
 
 
+def clean_animal_name(name: str) -> str:
+    """
+    Clean up animal names by removing annotations like '(list)' and 'Also see X'.
+
+    Args:
+        name: Raw animal name that may contain annotations.
+
+    Returns:
+        Cleaned animal name.
+    """
+    # Remove '(list)' annotation
+    name = re.sub(r"\s*\(list\)", "", name)
+
+    # Remove 'Also see X' annotations
+    name = re.sub(r"\s*;\s*Also see.*", "", name)
+
+    # Strip any remaining whitespace
+    return name.strip()
+
+
 def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
     """
     Parse the "Collateral adjective" table from HTML file.
@@ -315,10 +335,12 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                         # page_url = create_wikipedia_url(animal_name)
                         a = 1
 
-                    animal_obj = Animal(name=animal_name, page_url=page_url)
+                    # Clean the animal name before creating the Animal object
+                    clean_name = clean_animal_name(animal_name)
+                    animal_obj = Animal(name=clean_name, page_url=page_url)
 
                     # Check if this animal already exists in the list
-                    if not any(a.name == animal_name for a in result[adj_lower]):
+                    if not any(a.name == clean_name for a in result[adj_lower]):
                         result[adj_lower].append(animal_obj)
 
     logger.info(f"Extracted {len(result)} adjective-animal mappings")

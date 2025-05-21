@@ -9,7 +9,13 @@ import pytest
 import requests
 
 from src.downloader import download_images
-from src.scraper import Animal, fetch_html, normalize_entry, parse_table
+from src.scraper import (
+    Animal,
+    clean_animal_name,
+    fetch_html,
+    normalize_entry,
+    parse_table,
+)
 
 # Add parent directory to path to make imports work with pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -372,3 +378,21 @@ def test_parse_table_with_br_tag_adjectives(temp_dir) -> None:
     assert "salamandrine" in result
     assert result["caudatan"][0].name == "Salamander"
     assert result["salamandrine"][0].name == "Salamander"
+
+
+def test_clean_animal_name():
+    """Test the clean_animal_name function."""
+    # Test removing (list) annotation
+    assert clean_animal_name("Dog (list)") == "Dog"
+
+    # Test removing 'Also see X' annotations
+    assert clean_animal_name("Cat; Also see Feline") == "Cat"
+
+    # Test combination of both
+    assert clean_animal_name("Horse (list); Also see Equine") == "Horse"
+
+    # Test with whitespace
+    assert clean_animal_name("  Rabbit  ") == "Rabbit"
+
+    # Test with no annotations
+    assert clean_animal_name("Elephant") == "Elephant"
