@@ -277,10 +277,22 @@ def download_images(
         logger.warning(f"Could not check disk space: {e}")
 
     # Prepare placeholder path
-    if placeholder_path is None:
-        placeholder_path = Path(__file__).parent / "assets" / "placeholder.jpg"
-        if not placeholder_path.exists():
-            logger.warning(f"Placeholder image not found at {placeholder_path}")
+    if not placeholder_path:
+        # Try multiple possible locations for the placeholder image
+        possible_paths = [
+            Path(__file__).parent / "assets" / "placeholder.jpg",
+            Path(__file__).parent.parent / "src" / "assets" / "placeholder.jpg",
+            Path.cwd() / "src" / "assets" / "placeholder.jpg",
+        ]
+
+        # Use the first path that exists
+        for path in possible_paths:
+            if path.exists():
+                placeholder_path = path
+                break
+        # flake8 E713 false positive workaround: use 'placeholder_path is None'
+        if placeholder_path is None:  # noqa: E713
+            logger.warning(f"Placeholder image not found in any of: {possible_paths}")
 
     # Flatten the mapping to get a list of all animals
     all_animals = []

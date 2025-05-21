@@ -121,8 +121,30 @@ def clean_animal_name(name: str) -> str:
     # Remove 'Also see X' annotations
     name = re.sub(r"\s*;\s*Also see.*", "", name)
 
+    # Remove square bracket annotations like [C], [D], etc.
+    name = re.sub(r"\s*\[[A-Za-z0-9]\]", "", name)
+
     # Strip any remaining whitespace
     return name.strip()
+
+
+def create_wikipedia_url(animal_name: str) -> str:
+    """
+    Generate a Wikipedia URL for an animal based on its name.
+
+    Args:
+        animal_name: The name of the animal.
+
+    Returns:
+        A Wikipedia URL for the animal.
+    """
+    # Clean the name first
+    clean_name = clean_animal_name(animal_name)
+
+    # Replace spaces with underscores and capitalize each word
+    wiki_name = "_".join(word.capitalize() for word in clean_name.split())
+
+    return f"https://en.wikipedia.org/wiki/{wiki_name}"
 
 
 def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
@@ -333,7 +355,7 @@ def parse_table(html_path: Path) -> Dict[str, List[Animal]]:
                             f"No direct link found for animal '{animal_name}', falling back to generated URL"
                         )
                         # page_url = create_wikipedia_url(animal_name)
-                        a = 1
+                        page_url = create_wikipedia_url(animal_name)
 
                     # Clean the animal name before creating the Animal object
                     clean_name = clean_animal_name(animal_name)
