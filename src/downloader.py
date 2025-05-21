@@ -9,10 +9,9 @@ import json
 import logging
 import random
 import re
-import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from threading import local
 from typing import Dict, List, Optional
@@ -22,7 +21,6 @@ from bs4 import BeautifulSoup
 
 from src.scraper import Animal
 
-# Configure logger
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -268,7 +266,7 @@ def extract_image_url(page_url: str) -> Optional[str]:
                     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
                     img_url = base_url + img_url
 
-                # Look for larger version (Wikipedia often has thumb URLs)
+                # Look for a larger version (Wikipedia often has thumb URLs)
                 # If URL contains /thumb/ directory, we can try to get full version
                 if "/thumb/" in img_url:
                     try:
@@ -683,7 +681,7 @@ def download_images(
     except Exception as e:
         logger.warning(f"Could not check disk space: {e}")
 
-    # Prepare placeholder path
+    # Prepare a placeholder path
     if not placeholder_path:
         # Try multiple possible locations for the placeholder image
         possible_paths = [
@@ -697,7 +695,6 @@ def download_images(
             if path.exists():
                 placeholder_path = path
                 break
-        # flake8 E713 false positive workaround: use 'placeholder_path is None'
         if placeholder_path is None:  # noqa: E713
             logger.warning(f"Placeholder image not found in any of: {possible_paths}")
 
