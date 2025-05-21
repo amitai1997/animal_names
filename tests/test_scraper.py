@@ -321,3 +321,54 @@ def test_full_pipeline_with_live_data():
             assert (
                 Path(image_path).stat().st_size > 0
             ), f"Empty image for {animal_name}: {image_path}"
+
+
+def test_normalize_entry_with_br_tags() -> None:
+    """Test that <br> tags are replaced with separators."""
+    # HTML with <br> tags that should be treated as separators
+    html_input = "<p>caudatan<br>salamandrine</p>"
+    expected = "caudatan; salamandrine"
+
+    result = normalize_entry(html_input)
+    assert result == expected
+
+    # Multiple <br> tags
+    html_input = "<p>first<br>second<br>third</p>"
+    expected = "first; second; third"
+
+    result = normalize_entry(html_input)
+    assert result == expected
+
+
+def test_parse_table_with_br_tag_adjectives(temp_dir) -> None:
+    """Test parsing a table with adjectives separated by <br> tags."""
+    # Create HTML with <br> tags in adjective cells
+    html_with_br_tags = """
+    <html>
+        <body>
+            <table class="wikitable">
+                <tr>
+                    <th>Animal</th>
+                    <th>Collateral adjective</th>
+                </tr>
+                <tr>
+                    <td>Salamander</td>
+                    <td>caudatan<br>salamandrine</td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+
+    test_file = temp_dir / "br_tags.html"
+    with open(test_file, "w", encoding="utf-8") as f:
+        f.write(html_with_br_tags)
+
+    # Parse the table
+    result = parse_table(test_file)
+
+    # Verify both adjectives are extracted separately
+    assert "caudatan" in result
+    assert "salamandrine" in result
+    assert result["caudatan"][0].name == "Salamander"
+    assert result["salamandrine"][0].name == "Salamander"

@@ -89,6 +89,10 @@ def normalize_entry(raw: str) -> str:
         small.insert_before(" ")
         small.insert_after(" ")
 
+    # Replace <br> tags with a semicolon to ensure they're treated as separators
+    for br in soup.find_all("br"):
+        br.replace_with("; ")
+
     # Get text with whitespace preserved
     text = soup.get_text()  # type: str
 
